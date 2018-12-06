@@ -21,6 +21,7 @@ public class DbHandler {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static synchronized DbHandler getInstance() throws SQLException, ClassNotFoundException {
         if(instance == null)
             instance = new DbHandler();
@@ -41,6 +42,8 @@ public class DbHandler {
     public static final String KEY_SET = "_set";
     public static final String KEY_ELEMENT = "_element";
 =======
+=======
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
     public static synchronized DbHandler getInstance() throws SQLException, ClassNotFoundException {
         if(instance == null)
             instance = new DbHandler();
@@ -48,6 +51,9 @@ public class DbHandler {
     }
 
     private Connection connection;
+<<<<<<< HEAD
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
+=======
 >>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
 
     public DbHandler(){
@@ -96,12 +102,15 @@ public class DbHandler {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("create table " + TABLE_NAME + "(" + KEY_COLLECTION
                 + " text," + KEY_SET + " text," + KEY_ELEMENT + " text" + ")");
 >>>>>>> 937a5b2
 =======
+=======
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
     public void addElement(Element element)
     {
         try(PreparedStatement statement = this.connection.prepareStatement(
@@ -114,6 +123,9 @@ public class DbHandler {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+<<<<<<< HEAD
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
+=======
 >>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
     }
 

@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 <<<<<<< HEAD
 
@@ -21,10 +22,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 public class MainActivity extends AppCompatActivity {
 >>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
 
+=======
+public class MainActivity extends AppCompatActivity {
+
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+<<<<<<< HEAD
 <<<<<<< HEAD
         btnAdd = (Button) findViewById(R.id.btnAdd);
         btnAdd.setOnClickListener(this);
@@ -103,6 +109,8 @@ public class MainActivity extends AppCompatActivity {
                 database.delete(DbHandler.TABLE_NAME, null, null);
                 break;
 =======
+=======
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
         try {
             System.out.println("GetInstanse!");
             DbHandler dbHandler = DbHandler.getInstance();
@@ -113,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
             List<Element> elements = dbHandler.getAllProducts();
             for (Element element : elements) {
                 System.out.println(element.toString());
+<<<<<<< HEAD
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
+=======
 >>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
             }
         }catch(SQLException e){
