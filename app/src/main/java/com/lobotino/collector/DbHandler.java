@@ -22,56 +22,6 @@ public class DbHandler {
     public static synchronized DbHandler getInstance() throws SQLException, ClassNotFoundException {
         if(instance == null)
             instance = new DbHandler();
-        return instance;
-    }
-
-    private Connection connection;
-
-    public DbHandler(){
-
-        connection = null;
-        try {
-            DriverManager.registerDriver(new JDBC());
-            connection = DriverManager.getConnection(CONNECTION_PATH);
-            System.out.println("База подключена!");
-        }
-        catch (SQLException e) {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public List<Element> getAllProducts() {
-
-        // Statement используется для того, чтобы выполнить sql-запрос
-        try (Statement statement = this.connection.createStatement()) {
-            // В данный список будем загружать наши элементы, полученные из БД
-            List<Element> elements = new ArrayList<Element>();
-            // В resultSet будет храниться результат нашего запроса,
-            // который выполняется командой statement.executeQuery()
-            ResultSet resultSet = statement.executeQuery("SELECT id, good, price, category_name FROM elements");
-            // Проходимся по нашему resultSet и заносим данные в products
-            while (resultSet.next()) {
-                elements.add(new Element(resultSet.getInt("id"),
-                        resultSet.getString("good"),
-                        resultSet.getDouble("price"),
-                        resultSet.getString("category_name")));
-            }
-            // Возвращаем наш список
-            return elements;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // Если произошла ошибка - возвращаем пустую коллекцию
-            return Collections.emptyList();
-        }
-    }
-
     public void addElement(Element element)
     {
         try(PreparedStatement statement = this.connection.prepareStatement(
