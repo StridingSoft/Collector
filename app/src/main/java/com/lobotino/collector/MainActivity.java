@@ -1,37 +1,29 @@
 package com.lobotino.collector;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
-import java.sql.SQLException;
-import java.util.List;
-
-<<<<<<< HEAD
-<<<<<<< HEAD
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
-<<<<<<< HEAD
 
     Button btnAdd, btnRead, btnClear;
     EditText etCollection, etSet, etElement;
     TextView tvResult;
 
     DbHandler dbHandler;
-=======
->>>>>>> 937a5b2
-=======
-public class MainActivity extends AppCompatActivity {
->>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
 
-=======
-public class MainActivity extends AppCompatActivity {
 
->>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         btnAdd = (Button) findViewById(R.id.btnAdd);
         btnAdd.setOnClickListener(this);
 
@@ -87,15 +79,10 @@ public class MainActivity extends AppCompatActivity {
                     int setIndex = cursor.getColumnIndex(DbHandler.KEY_SET);
                     int elemIndex = cursor.getColumnIndex(DbHandler.KEY_ELEMENT);
                     do {
-<<<<<<< HEAD
                         result = result + (cursor.getString(colIndex) +
                                 ", " + cursor.getString(setIndex) +
                                 ", " + cursor.getString(elemIndex) + "\n");
-=======
-                        result = result + cursor.getString(colIndex) +
-                                ", " + cursor.getString(setIndex) +
-                                ", " + cursor.getString(elemIndex) + "\n";
->>>>>>> 937a5b2
+
                     } while (cursor.moveToNext());
                 } else
                     result = "0 rows";
@@ -108,29 +95,8 @@ public class MainActivity extends AppCompatActivity {
             case R.id.btnClear: {
                 database.delete(DbHandler.TABLE_NAME, null, null);
                 break;
-=======
-=======
->>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
-        try {
-            System.out.println("GetInstanse!");
-            DbHandler dbHandler = DbHandler.getInstance();
-            // Добавляем запись
-            dbHandler.addElement(new Element(1, "Музей", 200, "Развлечения"));
-            dbHandler.addElement(new Element(2, "Бакуганы", 2001, "Развлечения"));
-            // Получаем все записи и выводим их на консоль
-            List<Element> elements = dbHandler.getAllProducts();
-            for (Element element : elements) {
-                System.out.println(element.toString());
-<<<<<<< HEAD
->>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
-=======
->>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
+
             }
-        }catch(SQLException e){
-            e.printStackTrace();
-        }catch(ClassNotFoundException e)
-        {
-            e.printStackTrace();
         }
     }
 }
