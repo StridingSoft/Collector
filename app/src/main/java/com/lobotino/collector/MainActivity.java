@@ -1,17 +1,12 @@
 package com.lobotino.collector;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 
+import java.sql.SQLException;
+import java.util.List;
 
+<<<<<<< HEAD
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 <<<<<<< HEAD
 
@@ -22,17 +17,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     DbHandler dbHandler;
 =======
 >>>>>>> 937a5b2
+=======
+public class MainActivity extends AppCompatActivity {
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
 
-    Button btnAdd, btnRead, btnClear;
-    EditText etCollection, etSet, etElement;
-    TextView tvResult;
-
-    DbHandler dbHandler;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+<<<<<<< HEAD
         btnAdd = (Button) findViewById(R.id.btnAdd);
         btnAdd.setOnClickListener(this);
 
@@ -109,8 +102,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btnClear: {
                 database.delete(DbHandler.TABLE_NAME, null, null);
                 break;
+=======
+        try {
+            System.out.println("GetInstanse!");
+            DbHandler dbHandler = DbHandler.getInstance();
+            // Добавляем запись
+            dbHandler.addElement(new Element(1, "Музей", 200, "Развлечения"));
+            dbHandler.addElement(new Element(2, "Бакуганы", 2001, "Развлечения"));
+            // Получаем все записи и выводим их на консоль
+            List<Element> elements = dbHandler.getAllProducts();
+            for (Element element : elements) {
+                System.out.println(element.toString());
+>>>>>>> parent of 937a5b2... Поднята база SQlite, рабочее состояние
             }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }catch(ClassNotFoundException e)
+        {
+            e.printStackTrace();
         }
-        dbHandler.close();
     }
 }
