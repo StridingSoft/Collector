@@ -4,7 +4,7 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/register_back"
+        android:id="@+id/btnBackToMain"
         style="@style/Widget.AppCompat.Button.Small"
         android:layout_width="wrap_content"
         android:layout_height="33dp"
@@ -26,7 +26,7 @@
         android:hint="Password" />
 
     <Button
-        android:id="@+id/bConfirmRegister"
+        android:id="@+id/btnConfirmRegister"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Confirm" />
