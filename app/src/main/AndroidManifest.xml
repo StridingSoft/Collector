@@ -6,9 +6,12 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+<<<<<<< HEAD
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+=======
+>>>>>>> Не рабочая версия, вылетает при запуске cursor
 
     <application
         android:allowBackup="true"
@@ -37,6 +40,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".RegisterActivity"
+            android:label="@string/title_activity_register"></activity>
     </application>
 
 </manifest>
