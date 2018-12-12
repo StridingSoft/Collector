@@ -17,7 +17,10 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> Добавлена БД юзеров. Готова регистрация
 </resources>

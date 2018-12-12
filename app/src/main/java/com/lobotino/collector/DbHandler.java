@@ -2,7 +2,10 @@ package com.lobotino.collector;
 
 import android.content.Context;
 import android.database.Cursor;
+<<<<<<< HEAD
 import android.database.SQLException;
+=======
+>>>>>>> Добавлена БД юзеров. Готова регистрация
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -14,6 +17,7 @@ import java.io.OutputStream;
 
 public class DbHandler extends SQLiteOpenHelper{
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     public static final int DATABASE_VERSION = 27;
     public static final String DB_NAME = "info.db";
@@ -58,6 +62,9 @@ public class DbHandler extends SQLiteOpenHelper{
     public static int globalUserID = 0;
 =======
    public static final int DATABASE_VERSION = 1;
+=======
+   public static final int DATABASE_VERSION = 3;
+>>>>>>> Добавлена БД юзеров. Готова регистрация
    public static final String DATABASE_NAME = "collectionsDb";
    public static final String TABLE_NAME = "collections";
    public static final String TABLE_USERS = "users";
@@ -73,7 +80,10 @@ public class DbHandler extends SQLiteOpenHelper{
    public static final String KEY_ELEMENT = "_element";
 >>>>>>> Не рабочая версия, вылетает при запуске cursor
 
+    public static int globalUserID = 0;
+
     public DbHandler(Context context) {
+<<<<<<< HEAD
         super(context, DB_NAME, null, DATABASE_VERSION);
 
 
@@ -91,18 +101,27 @@ public class DbHandler extends SQLiteOpenHelper{
 
 
         /*SQLiteDatabase db = this.getWritableDatabase();
+=======
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        SQLiteDatabase db = this.getWritableDatabase();
+>>>>>>> Добавлена БД юзеров. Готова регистрация
         Cursor cursor = db.query(DbHandler.TABLE_USERS, null, null, null, null, null, null);
         if(cursor.moveToFirst()) {
             globalUserID = cursor.getInt(cursor.getColumnIndex(DbHandler.KEY_GLOBAL_USER_ID));
         }else{
             globalUserID = 0;
+<<<<<<< HEAD
         }*/
+=======
+        }
+>>>>>>> Добавлена БД юзеров. Готова регистрация
     }
 
 
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+<<<<<<< HEAD
 <<<<<<< HEAD
       /*  db.execSQL("CREATE TABLE " + TABLE_COLLECTIONS + "("
                 + KEY_COLLECTION_ID + " INTEGER,"
@@ -123,12 +142,19 @@ public class DbHandler extends SQLiteOpenHelper{
                 + KEY_ITEM_NAME + " TEXT,"
                 + KEY_ITEM_DESCRIPTION + " TEXT,"
                 + KEY_ITEM_IMAGE_PATH + " TEXT)");
+=======
+        db.execSQL("CREATE TABLE " + TABLE_NAME + "("
+                + KEY_COLLECTION + " TEXT,"
+                + KEY_SET + " TEXT,"
+                + KEY_ELEMENT + " TEXT)");
+>>>>>>> Добавлена БД юзеров. Готова регистрация
 
         db.execSQL("CREATE TABLE " + TABLE_USERS + "("
                 + KEY_GLOBAL_USER_ID + " INTEGER,"
                 + KEY_USER_ID + " INTEGER,"
                 + KEY_LOGIN + " TEXT,"
                 + KEY_PASSWORD_HASH + " TEXT,"
+<<<<<<< HEAD
                 + KEY_REGISTER_DATE + " TEXT)");
 */
 =======
@@ -139,6 +165,10 @@ public class DbHandler extends SQLiteOpenHelper{
                 + " integer," + KEY_USER_ID + " integer," + KEY_LOGIN + " text," + KEY_PASSWORD_HASH + " text,"
                 + KEY_REGISTER_DATE + " text)");
 >>>>>>> Не рабочая версия, вылетает при запуске cursor
+=======
+                + KEY_USER_SALT + " TEXT,"
+                + KEY_REGISTER_DATE + " TEXT)");
+>>>>>>> Добавлена БД юзеров. Готова регистрация
 
     }
 
