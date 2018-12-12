@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button btnAdd, btnRead, btnClear, btnGoToReg;
     EditText etCollection, etSet, etElement;
     TextView tvResult;
-    public static int globalUserID = 0;
+
     public static DbHandler dbHandler;
 
     @Override
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnClear = (Button) findViewById(R.id.btnClear);
         btnClear.setOnClickListener(this);
 
-        btnGoToReg = (Button) findViewById(R.id.btnGoToRegister);
+        btnGoToReg = (Button) findViewById(R.id.btnGoToSignIn);
         btnGoToReg.setOnClickListener(this);
 
         etCollection = (EditText) findViewById(R.id.etCollection);
@@ -49,13 +49,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         dbHandler = new DbHandler(this);
 
-        SQLiteDatabase db = dbHandler.getWritableDatabase();
-        Cursor cursor = db.query(DbHandler.TABLE_USERS, null, null, null, null, null, null);
-        if(cursor.moveToFirst()) {
-            globalUserID = cursor.getInt(cursor.getColumnIndex(DbHandler.KEY_GLOBAL_USER_ID));
-        }else{
-            globalUserID = 0;
-        }
     }
 
     @Override
@@ -94,21 +87,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (cursor.moveToFirst()) {
                     int loginIndex = cursor.getColumnIndex(DbHandler.KEY_LOGIN);
                     int passIndex = cursor.getColumnIndex(DbHandler.KEY_PASSWORD_HASH);
+                    int saltIndex = cursor.getColumnIndex(DbHandler.KEY_USER_SALT);
                     int idUserIndex = cursor.getColumnIndex(DbHandler.KEY_USER_ID);
                     int regDateIndex = cursor.getColumnIndex(DbHandler.KEY_REGISTER_DATE);
 
                     do {
-                        result = result + (cursor.getInt(idUserIndex) + " " + cursor.getString(loginIndex) +
-                                ", " + cursor.getString(passIndex) +
-                                ", " + cursor.getString(regDateIndex) + "\n");
+                        result = result + ( "ID: " + cursor.getInt(idUserIndex) + "\nLogin: " + cursor.getString(loginIndex) +
+                                "\nPassword: " + cursor.getString(passIndex) + "\nSalt: " + cursor.getString(saltIndex) +
+                                "\nRegDate: " + cursor.getString(regDateIndex) + "\n\n");
 
                     } while (cursor.moveToNext());
                 } else
-                    result = "0 users\n";
+                    result = result + "0 users\n";
 
 
                 cursor = database.query(DbHandler.TABLE_NAME, null, null, null, null, null, null);
-                result = "COLLECTIONS:\n";
+                result = result + "COLLECTIONS:\n";
                 if (cursor.moveToFirst()) {
                     int colIndex = cursor.getColumnIndex(DbHandler.KEY_COLLECTION);
                     int setIndex = cursor.getColumnIndex(DbHandler.KEY_SET);
@@ -120,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     } while (cursor.moveToNext());
                 } else
-                    result = "0 rows";
+                    result = result + "0 rows";
 
                 tvResult.setText(result);
                 cursor.close();
@@ -130,9 +124,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btnClear: {
                 SQLiteDatabase database = dbHandler.getWritableDatabase();
                 database.delete(DbHandler.TABLE_NAME, null, null);
+                database.delete(DbHandler.TABLE_USERS, null, null);
                 break;
             }
-            case R.id.btnGoToRegister:{
+            case R.id.btnGoToSignIn:{
                 Intent intObj = new Intent(this, RegisterActivity.class);
                 startActivity(intObj);
             }
