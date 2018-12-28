@@ -1,36 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:weightSum="1">
 
     <Button
-        android:id="@+id/btnGoToSignIn"
-        android:layout_width="102dp"
+        android:id="@+id/btnGoToLogin"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:onClick="toR"
         android:text="Sign In"
-        android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btnGoToReg"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:text="Register"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        tools:ignore="HardcodedText" />
 
     <EditText
         android:id="@+id/etCollection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Collection"></EditText>
+        android:hint="@string/collection"></EditText>
 
     <EditText
         android:id="@+id/etSet"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Set"></EditText>
+        android:hint="@string/set"></EditText>
 
     <EditText
         android:id="@+id/etElement"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Element"></EditText>
+        android:hint="@string/element"></EditText>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -39,26 +48,29 @@
             android:id="@+id/btnAdd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add">
+            android:text="@string/add"
+            tools:ignore="ButtonStyle">
         </Button>
         <Button
             android:id="@+id/btnRead"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Read">
+            android:text="@string/read"
+            tools:ignore="ButtonStyle">
         </Button>
         <Button
             android:id="@+id/btnClear"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Clear">
+            android:text="@string/clear"
+            tools:ignore="ButtonStyle">
         </Button>
     </LinearLayout>
 
     <TextView
         android:id="@+id/result"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_weight="0.62" />
 
 </LinearLayout>

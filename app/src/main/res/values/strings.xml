@@ -21,4 +21,23 @@
     <string name="login">Login</string>
     <string name="password">Password</string>
     <string name="textview">TextView</string>
+    <string name="sign_in">sign in</string>
+    <string name="add">Add</string>
+    <string name="clear">Clear</string>
+    <string name="collection">Collection</string>
+    <string name="element">Element</string>
+    <string name="read">Read</string>
+    <string name="set">Set</string>
+    <string name="title_activity_main2">Main2Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="sendToMailString">Отзывы и предложения можно прислать на почту</string>
+    <string name="lobotino1_gmail_com">Lobotino1@gmail.com</string>
+    <string name="SendToMail">Отзывы и предложения можно прислать на почту</string>
+    <string name="CommunityColl">Коллекции сообщества</string>
+    <string name="MyCollections">Мои коллекции</string>
+    <string name="_123">123</string>
 </resources>

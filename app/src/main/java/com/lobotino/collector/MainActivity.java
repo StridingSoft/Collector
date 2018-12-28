@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-    Button btnAdd, btnRead, btnClear, btnGoToReg;
+    Button btnAdd, btnRead, btnClear, btnGoToReg, btnGoToLogin;
     EditText etCollection, etSet, etElement;
     TextView tvResult;
 
@@ -37,8 +37,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnClear = (Button) findViewById(R.id.btnClear);
         btnClear.setOnClickListener(this);
 
-        btnGoToReg = (Button) findViewById(R.id.btnGoToSignIn);
+        btnGoToReg = (Button) findViewById(R.id.btnGoToReg);
         btnGoToReg.setOnClickListener(this);
+
+        btnGoToLogin = (Button) findViewById(R.id.btnGoToLogin);
+        btnGoToLogin.setOnClickListener(this);
+
 
         etCollection = (EditText) findViewById(R.id.etCollection);
         etSet = (EditText) findViewById(R.id.etSet);
@@ -66,11 +70,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String set = etSet.getText().toString();
                 String element = etElement.getText().toString();
 
-                contentValues.put(DbHandler.KEY_COLLECTION, collection);
-                contentValues.put(DbHandler.KEY_SET, set);
-                contentValues.put(DbHandler.KEY_ELEMENT, element);
+//                contentValues.put(DbHandler.KEY_COLLECTION, collection);
+//                contentValues.put(DbHandler.KEY_SET, set);
+//                contentValues.put(DbHandler.KEY_ELEMENT, element);
 
-                database.insert(DbHandler.TABLE_NAME, null, contentValues);
+              //  database.insert(DbHandler.TABLE_NAME, null, contentValues);
 
                 etCollection.setText("");
                 etSet.setText("");
@@ -87,13 +91,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (cursor.moveToFirst()) {
                     int loginIndex = cursor.getColumnIndex(DbHandler.KEY_LOGIN);
                     int passIndex = cursor.getColumnIndex(DbHandler.KEY_PASSWORD_HASH);
-                    int saltIndex = cursor.getColumnIndex(DbHandler.KEY_USER_SALT);
                     int idUserIndex = cursor.getColumnIndex(DbHandler.KEY_USER_ID);
                     int regDateIndex = cursor.getColumnIndex(DbHandler.KEY_REGISTER_DATE);
 
                     do {
-                        result = result + ( "ID: " + cursor.getInt(idUserIndex) + "\nLogin: " + cursor.getString(loginIndex) +
-                                "\nPassword: " + cursor.getString(passIndex) + "\nSalt: " + cursor.getString(saltIndex) +
+                        result = result + ( "ID: " + cursor.getInt(idUserIndex) +
+                                "\nLogin: " + cursor.getString(loginIndex) +
+                                "\nPassword: " + cursor.getString(passIndex) +
                                 "\nRegDate: " + cursor.getString(regDateIndex) + "\n\n");
 
                     } while (cursor.moveToNext());
@@ -101,35 +105,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     result = result + "0 users\n";
 
 
-                cursor = database.query(DbHandler.TABLE_NAME, null, null, null, null, null, null);
-                result = result + "COLLECTIONS:\n";
-                if (cursor.moveToFirst()) {
-                    int colIndex = cursor.getColumnIndex(DbHandler.KEY_COLLECTION);
-                    int setIndex = cursor.getColumnIndex(DbHandler.KEY_SET);
-                    int elemIndex = cursor.getColumnIndex(DbHandler.KEY_ELEMENT);
-                    do {
-                        result = result + (cursor.getString(colIndex) +
-                                ", " + cursor.getString(setIndex) +
-                                ", " + cursor.getString(elemIndex) + "\n");
-
-                    } while (cursor.moveToNext());
-                } else
-                    result = result + "0 rows";
-
-                tvResult.setText(result);
-                cursor.close();
+//                cursor = database.query(DbHandler.TABLE_NAME, null, null, null, null, null, null);
+//                result = result + "COLLECTIONS:\n";
+//                if (cursor.moveToFirst()) {
+//                    int colIndex = cursor.getColumnIndex(DbHandler.KEY_COLLECTION);
+//                    int setIndex = cursor.getColumnIndex(DbHandler.KEY_SET);
+//                    int elemIndex = cursor.getColumnIndex(DbHandler.KEY_ELEMENT);
+//                    do {
+//                        result = result + (cursor.getString(colIndex) +
+//                                ", " + cursor.getString(setIndex) +
+//                                ", " + cursor.getString(elemIndex) + "\n");
+//
+////                    } while (cursor.moveToNext());
+//                } else
+//                    result = result + "0 rows";
+//
+//                tvResult.setText(result);
+//                cursor.close();
                 break;
             }
 
             case R.id.btnClear: {
                 SQLiteDatabase database = dbHandler.getWritableDatabase();
-                database.delete(DbHandler.TABLE_NAME, null, null);
+                database.delete(DbHandler.TABLE_COLLECTIONS, null, null);
+                database.delete(DbHandler.TABLE_SECTIONS, null, null);
+                database.delete(DbHandler.TABLE_ITEMS, null, null);
                 database.delete(DbHandler.TABLE_USERS, null, null);
                 break;
             }
-            case R.id.btnGoToSignIn:{
+            case R.id.btnGoToLogin:{
+                Intent intObj = new Intent(this, LoginActivity.class);
+                startActivity(intObj);
+                break;
+            }
+
+            case R.id.btnGoToReg:{
                 Intent intObj = new Intent(this, RegisterActivity.class);
                 startActivity(intObj);
+                break;
             }
         }
     }

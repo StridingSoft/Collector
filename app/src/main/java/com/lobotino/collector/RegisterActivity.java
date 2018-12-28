@@ -20,11 +20,11 @@ import java.util.Random;
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener {
 
 
-
     DbHandler dbHandler;
     EditText etLogin, etPassword, etConfirmPassword;
     Button btnBack, btnConfirm;
     TextView regStatus;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,8 +105,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
                 try {
 
-                    String salt = generateString();
-                    Password = Password + salt; //Добавление соли
+                    Password = Password + DbHandler.SALT; //Добавление соли
 
                     byte[] dataBytes = Password.getBytes();
                     MessageDigest md = MessageDigest.getInstance("MD5");
@@ -128,7 +127,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                     contentValues.put(DbHandler.KEY_USER_ID, DbHandler.globalUserID++);
                     contentValues.put(DbHandler.KEY_LOGIN, Login);
                     contentValues.put(DbHandler.KEY_PASSWORD_HASH, passwordSb.toString());
-                    contentValues.put(DbHandler.KEY_USER_SALT, salt);
                     contentValues.put(DbHandler.KEY_REGISTER_DATE, currentDate);
 
                     database.insert(DbHandler.TABLE_USERS, null, contentValues);
