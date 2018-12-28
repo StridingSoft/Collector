@@ -30,6 +30,9 @@
     <string name="password">Password</string>
     <string name="textview">TextView</string>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Много-много радостей
     <string name="sign_in">sign in</string>
     <string name="add">Add</string>
     <string name="clear">Clear</string>
@@ -37,7 +40,11 @@
     <string name="element">Element</string>
     <string name="read">Read</string>
     <string name="set">Set</string>
+<<<<<<< HEAD
     <string name="title_activity_main2">Коллекционер</string>
+=======
+    <string name="title_activity_main2">Main2Activity</string>
+>>>>>>> Много-много радостей
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -49,6 +56,7 @@
     <string name="CommunityColl">Коллекции сообщества</string>
     <string name="MyCollections">Мои коллекции</string>
     <string name="_123">123</string>
+<<<<<<< HEAD
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -56,4 +64,6 @@
 >>>>>>> Не рабочая версия, вылетает при запуске cursor
 =======
 >>>>>>> Добавлена БД юзеров. Готова регистрация
+=======
+>>>>>>> Много-много радостей
 </resources>

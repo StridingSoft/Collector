@@ -21,9 +21,16 @@
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+<<<<<<< HEAD
         android:theme="@style/AppTheme"
         android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
         >
+=======
+        android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity">
+
+        </activity>
+>>>>>>> Много-много радостей
         <activity
             android:name=".RegisterActivity"
             android:label="Register" />
@@ -31,7 +38,11 @@
             android:name=".LoginActivity"
             android:label="Login" />
         <activity
+<<<<<<< HEAD
             android:name=".NavigationActivity"
+=======
+            android:name=".MyCollectionsActivity"
+>>>>>>> Много-много радостей
             android:label="@string/title_activity_main2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -39,10 +50,8 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
-        <activity
-            android:name=".RegisterActivity"
-            android:label="@string/title_activity_register" />
     </application>
 
 </manifest>
