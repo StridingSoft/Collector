@@ -53,28 +53,6 @@ public class MyCollectionsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
 
-
-        setContentView(R.layout.content_main2);
-        scrollView = (ScrollView) findViewById(R.id.scroll_view_id_1);
-        scrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                ViewTreeObserver observer = scrollView.getViewTreeObserver();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    observer.removeOnGlobalLayoutListener(this);
-                } else {
-                    observer.removeGlobalOnLayoutListener(this);
-                }
-                observer.addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
-                    @Override
-                    public void onScrollChanged() {
-                        //Your code here
-                    }
-                });
-            }
-        });
-
-
         setContentView(R.layout.activity_main2);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -86,6 +64,8 @@ public class MyCollectionsActivity extends AppCompatActivity
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
 
 
 
