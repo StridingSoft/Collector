@@ -1,31 +1,25 @@
 package com.lobotino.collector;
 
 import android.Manifest;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.MotionEvent;
-import android.view.View;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewTreeObserver;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +28,8 @@ import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class MyCollectionsActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+
+public class MyCollections extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     private DbHandler dbHandler;
     private SQLiteDatabase mDb;
@@ -45,17 +39,14 @@ public class MyCollectionsActivity extends AppCompatActivity
     private List<String> listPaths;
     private int pictureSize;
 
-    private ScrollView scrollView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         setContentView(R.layout.activity_main2);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        setSupportActionBar(toolbar);
 
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -66,10 +57,6 @@ public class MyCollectionsActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-
-
-        //Открытие базы данных
 
         dbHandler = new DbHandler(this);
 
@@ -84,12 +71,6 @@ public class MyCollectionsActivity extends AppCompatActivity
         } catch (SQLException mSQLException) {
             throw mSQLException;
         }
-
-
-
-
-//---------------Создание Layout
-
 
 
 
@@ -164,66 +145,8 @@ public class MyCollectionsActivity extends AppCompatActivity
                         101, galleryPermissions);
             }
         }
-
-        /*final ViewTreeObserver.OnScrollChangedListener onScrollChangedListener = new
-                ViewTreeObserver.OnScrollChangedListener() {
-
-                    @Override
-                    public void onScrollChanged() {
-                        //do stuff here
-                    }
-                };
-
-        final ScrollView scrollView = (ScrollView) findViewById(R.id.scroll_view_id_1);
-        scrollView.setOnTouchListener(new View.OnTouchListener() {
-            private ViewTreeObserver observer;
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (observer == null) {
-                    observer = scrollView.getViewTreeObserver();
-                    observer.addOnScrollChangedListener(onScrollChangedListener);
-                }
-                else if (!observer.isAlive()) {
-                    observer.removeOnScrollChangedListener(onScrollChangedListener);
-                    observer = scrollView.getViewTreeObserver();
-                    observer.addOnScrollChangedListener(onScrollChangedListener);
-                }
-
-                return false;
-            }
-        });*/
-
-        //---
-        //Найдем компоненты в XML разметке
-        //imageView = (ImageView) findViewById(R.id.);
-        //textView = (TextView) findViewById(R.id.textView3);
-
-        //Пропишем обработчик клика кнопки
-//        imageView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                String product = "";
-//                imageView.setVisibility(View.INVISIBLE);
-//
-//                Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, null, null, null, null, null);
-//                cursor.moveToFirst();
-//                int indexItemId = cursor.getColumnIndex(DbHandler.KEY_ITEM_ID);
-//                int indexItemName = cursor.getColumnIndex(DbHandler.KEY_ITEM_NAME);
-//                int indexItemDescription = cursor.getColumnIndex(DbHandler.KEY_ITEM_DESCRIPTION);
-//                while (!cursor.isAfterLast()) {
-//                    product += cursor.getInt(indexItemId) + " " + cursor.getString(indexItemName) + " " + cursor.getString(indexItemDescription) + "\n\n";
-//                    cursor.moveToNext();
-//                }
-//
-//                cursor.close();
-//                textView.setText(product);
-//            }
-//        });
     }
 
-
-    //Уменьшает размер одной картинки из базы данных по её ID адресу
 
     public class DownloadScaledImage extends AsyncTask<Integer, Void, Bitmap>
     {
@@ -280,39 +203,6 @@ public class MyCollectionsActivity extends AppCompatActivity
         }
     }
 
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main2, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -320,9 +210,8 @@ public class MyCollectionsActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_community_colletions) {
-
-        } else if (id == R.id.nav_my_collections) {
-
+            Intent intent = new Intent(MyCollections.this, NavigationActivity.class);
+            startActivity(intent);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

@@ -57,6 +57,7 @@
     <string name="MyCollections">Мои коллекции</string>
     <string name="_123">123</string>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -66,4 +67,9 @@
 >>>>>>> Добавлена БД юзеров. Готова регистрация
 =======
 >>>>>>> Много-много радостей
+=======
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+>>>>>>> потихоньку навожу порядок, нужно ещё убираться
 </resources>

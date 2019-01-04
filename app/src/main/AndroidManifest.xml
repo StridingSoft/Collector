@@ -23,9 +23,12 @@
         android:allowBackup="true"
         android:hardwareAccelerated="false"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         android:largeHeap="true"
 >>>>>>> Рабочая загрузка изображений
+=======
+>>>>>>> потихоньку навожу порядок, нужно ещё убираться
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
@@ -37,10 +40,13 @@
         >
 =======
         android:theme="@style/AppTheme">
+<<<<<<< HEAD
         <activity android:name=".MainActivity">
 
         </activity>
 >>>>>>> Много-много радостей
+=======
+>>>>>>> потихоньку навожу порядок, нужно ещё убираться
         <activity
             android:name=".RegisterActivity"
             android:label="Register" />
@@ -49,10 +55,17 @@
             android:label="Login" />
         <activity
 <<<<<<< HEAD
+<<<<<<< HEAD
             android:name=".NavigationActivity"
 =======
             android:name=".MyCollectionsActivity"
 >>>>>>> Много-много радостей
+=======
+            android:name=".MyCollections"
+            android:label="@string/MyCollections" />
+        <activity
+            android:name=".NavigationActivity"
+>>>>>>> потихоньку навожу порядок, нужно ещё убираться
             android:label="@string/title_activity_main2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -60,7 +73,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
     </application>
 

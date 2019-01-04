@@ -37,7 +37,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         loginStatus = (TextView) findViewById(R.id.tvLoginStatus);
 
-        dbHandler = MainActivity.dbHandler;
+       // dbHandler = MainActivity.dbHandler;
 
     }
 
@@ -89,8 +89,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
                 if (flagLogin) {
                     loginStatus.setText("Успешно!");
-                    Intent intObj = new Intent(this, MainActivity.class);
-                    startActivity(intObj);
+                 //   Intent intObj = new Intent(this, MainActivity.class);
+                 //   startActivity(intObj);
                     break;
                 } else {
                     loginStatus.setText("Нерпавильный логин или пароль");
@@ -100,8 +100,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
 
             case R.id.btnBackToMainFromLogin:{
-                Intent intObj = new Intent(this, MainActivity.class);
-                startActivity(intObj);
+               // Intent intObj = new Intent(this, MainActivity.class);
+            //    startActivity(intObj);
                 break;
             }
         }
