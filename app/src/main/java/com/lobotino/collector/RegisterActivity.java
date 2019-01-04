@@ -43,7 +43,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         regStatus = (TextView) findViewById(R.id.tvRegisterStatus);
 
-        dbHandler = MainActivity.dbHandler;
+       // dbHandler = MainActivity.dbHandler;
 
     }
 
@@ -127,8 +127,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 break;
             }
             case R.id.btnBackToMain: {
-                Intent intObj = new Intent(this, MainActivity.class);
-                startActivity(intObj);
+           //     Intent intObj = new Intent(this, MainActivity.class);
+            //    startActivity(intObj);
                 break;
             }
         }

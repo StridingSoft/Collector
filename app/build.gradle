@@ -26,12 +26,6 @@ dependencies {
     })
     compile files('libs/sqlite-jdbc-3.23.1.jar')
 
-    compile 'com.android.support:appcompat-v7:26.+'
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'commons-codec:commons-codec:1.11'
-    compile 'com.android.support:design:26.+'
-    compile 'com.android.support:percent:26.+'
-    compile 'pub.devrel:easypermissions:0.2.1'
 
     compile('com.google.android.gms:play-services-analytics:11.0.4') {
         force = true;
@@ -42,5 +36,12 @@ dependencies {
     compile('com.google.android.gms:play-services-gcm:11.0.4') {
         force = true;
     }
+    compile 'com.android.support:appcompat-v7:26.+'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'commons-codec:commons-codec:1.11'
+    compile 'com.android.support:design:26.+'
+    compile 'com.android.support:percent:26.+'
+    compile 'pub.devrel:easypermissions:0.2.1'
+    compile 'com.android.support:support-v4:26.+'
     testCompile 'junit:junit:4.12'
 }

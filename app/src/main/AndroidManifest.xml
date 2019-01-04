@@ -13,15 +13,12 @@
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="false"
-        android:largeHeap="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
-
-        </activity>
         <activity
             android:name=".RegisterActivity"
             android:label="Register" />
@@ -29,7 +26,10 @@
             android:name=".LoginActivity"
             android:label="Login" />
         <activity
-            android:name=".MyCollectionsActivity"
+            android:name=".MyCollections"
+            android:label="@string/MyCollections" />
+        <activity
+            android:name=".NavigationActivity"
             android:label="@string/title_activity_main2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -37,7 +37,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
     </application>
 
