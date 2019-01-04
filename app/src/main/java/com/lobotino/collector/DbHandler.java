@@ -24,6 +24,7 @@ public class DbHandler extends SQLiteOpenHelper{
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static final int DATABASE_VERSION = 27;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
@@ -32,6 +33,9 @@ public class DbHandler extends SQLiteOpenHelper{
 
 =======
     public static final int DATABASE_VERSION = 13;
+=======
+    public static final int DATABASE_VERSION = 17;
+>>>>>>> Рабочая загрузка изображений
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 

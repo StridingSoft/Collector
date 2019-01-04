@@ -47,21 +47,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     }
 
-
-    public static String generateString()
-    {
-        int size = 10;
-        String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}()[]-+*=";
-        Random rng = new Random();
-        char[] text = new char[size];
-        for (int i = 0; i < size; i++)
-        {
-            text[i] = characters.charAt(rng.nextInt(characters.length()));
-        }
-        return new String(text);
-    }
-
-
     @Override
     public void onClick(View v) {
 

@@ -56,6 +56,20 @@ dependencies {
 >>>>>>> Не рабочая версия, вылетает при запуске cursor
 =======
     compile 'com.android.support:percent:26.+'
+<<<<<<< HEAD
 >>>>>>> Много-много радостей
+=======
+    compile 'pub.devrel:easypermissions:0.2.1'
+
+    compile('com.google.android.gms:play-services-analytics:11.0.4') {
+        force = true;
+    }
+    compile('com.google.android.gms:play-services-ads:11.0.4') {
+        force = true;
+    }
+    compile('com.google.android.gms:play-services-gcm:11.0.4') {
+        force = true;
+    }
+>>>>>>> Рабочая загрузка изображений
     testCompile 'junit:junit:4.12'
 }
