@@ -14,7 +14,7 @@ import java.io.OutputStream;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 13;
+    public static final int DATABASE_VERSION = 17;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
