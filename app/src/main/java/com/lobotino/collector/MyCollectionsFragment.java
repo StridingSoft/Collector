@@ -1,7 +1,9 @@
 package com.lobotino.collector;
 
+
 import android.Manifest;
-import android.content.Intent;
+import android.app.Fragment;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -9,15 +11,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
+import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -28,8 +25,7 @@ import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
-
-public class MyCollections extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+public class MyCollectionsFragment extends Fragment {
 
     private DbHandler dbHandler;
     private SQLiteDatabase mDb;
@@ -39,26 +35,17 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
     private List<String> listPaths;
     private int pictureSize;
 
+    private View rootView;
 
+    private Context context;
+
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
-        setContentView(R.layout.activity_main2);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
-        dbHandler = new DbHandler(this);
+        rootView = inflater.inflate(R.layout.fragment_my_collections, container, false);
+        context = getActivity().getBaseContext();
+        dbHandler = NavigationActivity.dbHandler;
 
         try {
             dbHandler.updateDataBase();
@@ -74,13 +61,13 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
 
 
 
-        RelativeLayout layout = (RelativeLayout) findViewById(R.id.relative_layout_1);
+        RelativeLayout layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
         RelativeLayout.LayoutParams params;
 
         Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, null, null, null, null, null);
 
         int pathIndex = cursor.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
-        int puddingsSize = getApplicationContext().getResources().getDisplayMetrics().widthPixels / 15;
+        int puddingsSize = context.getResources().getDisplayMetrics().widthPixels / 15;
         int tempId;
         int lastLeftId = -1;
         int lastRightId = -1;
@@ -90,10 +77,10 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
 
         listImageViews = new ArrayList<ImageView>();
         listPaths = new ArrayList<String>();
-        pictureSize = getApplicationContext().getResources().getDisplayMetrics().widthPixels / 2;
+        pictureSize = context.getResources().getDisplayMetrics().widthPixels / 2;
 
         int currentId = 0;
-        if (EasyPermissions.hasPermissions(this, galleryPermissions)) {
+        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
             if (cursor.moveToFirst()) {
                 do {
                     params = new RelativeLayout.LayoutParams(pictureSize, pictureSize);
@@ -119,7 +106,7 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
                     pathToImage = cursor.getString(pathIndex);
                     listPaths.add(pathToImage);
 
-                    ImageView currentImageView = new ImageView(this);
+                    ImageView currentImageView = new ImageView(context);
                     currentImageView.setLayoutParams(params);
                     currentImageView.setPadding(puddingsSize, puddingsSize / 4, puddingsSize, puddingsSize / 4);
                     tempId = View.generateViewId();
@@ -145,7 +132,9 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
                         101, galleryPermissions);
             }
         }
+        return rootView;
     }
+
 
 
     public class DownloadScaledImage extends AsyncTask<Integer, Void, Bitmap>
@@ -171,7 +160,7 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
             try {
                 String pathToImage = listPaths.get(id);
 
-                InputStream in = getApplicationContext().getAssets().open(pathToImage); //Ваш InputStream
+                InputStream in = context.getAssets().open(pathToImage); //Ваш InputStream
                 BitmapFactory.Options o = new BitmapFactory.Options();
                 o.inJustDecodeBounds = true;
                 BitmapFactory.decodeStream(in, null, o);
@@ -184,7 +173,7 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
                 o.inPreferredConfig = Bitmap.Config.RGB_565;
 
                 in.close();
-                in = getApplicationContext().getAssets().open(pathToImage);
+                in = context.getAssets().open(pathToImage);
                 Bitmap bitmap = BitmapFactory.decodeStream(in, null, o);
                 in.close();
                 return bitmap;
@@ -201,26 +190,5 @@ public class MyCollections extends AppCompatActivity implements NavigationView.O
             super.onPostExecute(bitmap);
             listImageViews.get(id).setImageBitmap(bitmap);
         }
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-
-        int id = item.getItemId();
-
-        if (id == R.id.nav_community_colletions) {
-            Intent intent = new Intent(MyCollections.this, NavigationActivity.class);
-            startActivity(intent);
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    @Override
-    public void onClick(View view) {
-
     }
 }

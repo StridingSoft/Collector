@@ -35,6 +35,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
 <<<<<<< HEAD
+<<<<<<< HEAD
         android:theme="@style/AppTheme"
         android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
         >
@@ -47,6 +48,11 @@
 >>>>>>> Много-много радостей
 =======
 >>>>>>> потихоньку навожу порядок, нужно ещё убираться
+=======
+        android:theme="@style/AppTheme"
+        android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
+        >
+>>>>>>> Навел порядок, доделал навигацию, теперь мои коллекции работают как фрагмент
         <activity
             android:name=".RegisterActivity"
             android:label="Register" />
@@ -54,6 +60,7 @@
             android:name=".LoginActivity"
             android:label="Login" />
         <activity
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             android:name=".NavigationActivity"
@@ -64,6 +71,8 @@
             android:name=".MyCollections"
             android:label="@string/MyCollections" />
         <activity
+=======
+>>>>>>> Навел порядок, доделал навигацию, теперь мои коллекции работают как фрагмент
             android:name=".NavigationActivity"
 >>>>>>> потихоньку навожу порядок, нужно ещё убираться
             android:label="@string/title_activity_main2"
