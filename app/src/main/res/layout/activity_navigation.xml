@@ -9,7 +9,11 @@
     android:fitsSystemWindows="true"
     tools:openDrawer="start">
 
-
+    <FrameLayout
+        android:id="@+id/content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="?attr/actionBarSize" />
     <include
         layout="@layout/app_bar_main2"
         android:layout_width="match_parent"
@@ -22,6 +26,6 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header_main2"
-        app:menu="@menu/activity_main2_drawer" />
+        app:menu="@menu/activity_navigation_drawer" />
 
 </android.support.v4.widget.DrawerLayout>
