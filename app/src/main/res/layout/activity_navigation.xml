@@ -9,15 +9,24 @@
     android:fitsSystemWindows="true"
     tools:openDrawer="start">
 
-    <FrameLayout
-        android:id="@+id/content_frame"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="?attr/actionBarSize" />
-    <include
-        layout="@layout/app_bar_main2"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/content_frame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="?attr/actionBarSize">
+
+        </FrameLayout>
+
+        <include
+            layout="@layout/app_bar_main2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
