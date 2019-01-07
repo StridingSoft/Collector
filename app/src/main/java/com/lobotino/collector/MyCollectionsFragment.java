@@ -1,6 +1,5 @@
 package com.lobotino.collector;
 
-
 import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
@@ -10,23 +9,21 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -68,58 +65,62 @@ public class MyCollectionsFragment extends Fragment {
 
 
         RelativeLayout layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
-        RelativeLayout.LayoutParams params;
+        RelativeLayout.LayoutParams imageParams, textViewParams;
 
         Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, null, null, null, null, null);
 
         int pathIndex = cursor.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
+        int nameIndex = cursor.getColumnIndex(DbHandler.KEY_ITEM_NAME);
 
         int tempId;
         int lastLeftId = -1;
         int lastRightId = -1;
         int countImages = 0;
 
-        String pathToImage;
+        String pathToImage, currentName;
 
         int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
-        pictureSize = Math.round((float)(screenWidth / 3));
-        int externalMargins = screenWidth/11;
-        int topBotMargins = screenWidth/22;
-        int puddingsSize = pictureSize/15;
+        pictureSize = Math.round((float) (screenWidth / 3));
+        int externalMargins = screenWidth / 11;
+        int topMargin = screenWidth / 10;
+        int botMargin = screenWidth / 17;
+        int puddingsSize = pictureSize / 15;
 
         int currentId = 0;
         if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
             if (cursor.moveToFirst()) {
                 do {
-                    params = new RelativeLayout.LayoutParams(pictureSize, pictureSize);
+                    imageParams = new RelativeLayout.LayoutParams(pictureSize, pictureSize);
 
                     if (countImages % 2 == 0) {
                         if (lastLeftId == -1) {
-                            params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                            params.addRule(RelativeLayout.ALIGN_PARENT_START);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                            imageParams.setMargins(externalMargins, screenWidth / 16, 0, 0);
                         } else {
-                            params.addRule(RelativeLayout.BELOW, lastLeftId);
-                            params.addRule(RelativeLayout.ALIGN_PARENT_START, lastLeftId);
+                            imageParams.addRule(RelativeLayout.BELOW, lastLeftId);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                            imageParams.setMargins(externalMargins, topMargin, 0, 0);
                         }
-                        params.setMargins(externalMargins, topBotMargins, 0, topBotMargins);
+
                     } else {
                         if (lastRightId == -1) {
-                            params.addRule(RelativeLayout.ALIGN_PARENT_TOP, lastLeftId);
-                            params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, lastLeftId);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                            imageParams.setMargins(0, screenWidth / 16, externalMargins, 0);
                         } else {
-                            params.addRule(RelativeLayout.BELOW, lastRightId);
-                            params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, lastLeftId);
+                            imageParams.addRule(RelativeLayout.BELOW, lastRightId);
+                            imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                            imageParams.setMargins(0, topMargin, externalMargins, 0);
                         }
-                        params.setMargins(0, topBotMargins, externalMargins, topBotMargins);
+
                     }
-
-
 
                     pathToImage = cursor.getString(pathIndex);
 
                     ImageView currentImageView = new ImageView(context);
                     currentImageView.setBackground(gradientDrawable);
-                    currentImageView.setLayoutParams(params);
+                    currentImageView.setLayoutParams(imageParams);
                     currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
                     tempId = View.generateViewId();
                     currentImageView.setId(tempId);
@@ -130,19 +131,38 @@ public class MyCollectionsFragment extends Fragment {
 
                     layout.addView(currentImageView, currentId++);
 
-                    if (countImages % 2 == 0)
+
+                    textViewParams = new RelativeLayout.LayoutParams(pictureSize, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+                    TextView tvImageName = new TextView(context);
+                    currentName = cursor.getString(nameIndex);
+                    tvImageName.setTextColor(Color.parseColor("#ffffff"));
+                    tvImageName.setText(currentName);
+                    tvImageName.setGravity(Gravity.CENTER);
+
+                    if (countImages % 2 == 0) {
                         lastLeftId = tempId;
-                    else
+                        textViewParams.addRule(RelativeLayout.BELOW, lastLeftId);
+                        textViewParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                        textViewParams.setMargins(externalMargins, 5, 0, botMargin);
+                    } else {
                         lastRightId = tempId;
+                        textViewParams.addRule(RelativeLayout.BELOW, lastRightId);
+                        textViewParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                        textViewParams.setMargins(0, 5, externalMargins, botMargin);
+                    }
+                    tvImageName.setLayoutParams(textViewParams);
+                    tvImageName.setTypeface(Typeface.DEFAULT_BOLD);
+
+                    layout.addView(tvImageName, currentId++);
 
                     countImages++;
                 } while (cursor.moveToNext());
-
-
-            } else {
-                EasyPermissions.requestPermissions(this, "Access for storage",
-                        101, galleryPermissions);
             }
+
+        } else {
+            EasyPermissions.requestPermissions(this, "Access for storage",
+                    101, galleryPermissions);
         }
         return rootView;
     }
