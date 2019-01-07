@@ -1,9 +1,13 @@
 <resources>
 <<<<<<< HEAD
+<<<<<<< HEAD
     <string name="app_name">Коллекционер</string>
 =======
     <string name="app_name">Collector</string>
 >>>>>>> Не рабочая версия, вылетает при запуске cursor
+=======
+    <string name="app_name">Коллекционер</string>
+>>>>>>> Предельно начальная верстка
     <string name="title_activity_register">Sign in</string>
 
     <!-- Strings related to login -->
@@ -41,10 +45,14 @@
     <string name="read">Read</string>
     <string name="set">Set</string>
 <<<<<<< HEAD
+<<<<<<< HEAD
     <string name="title_activity_main2">Коллекционер</string>
 =======
     <string name="title_activity_main2">Main2Activity</string>
 >>>>>>> Много-много радостей
+=======
+    <string name="title_activity_main2">Коллекционер</string>
+>>>>>>> Предельно начальная верстка
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
