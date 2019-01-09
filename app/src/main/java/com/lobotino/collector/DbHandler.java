@@ -25,6 +25,7 @@ public class DbHandler extends SQLiteOpenHelper{
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static final int DATABASE_VERSION = 27;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
@@ -40,6 +41,14 @@ public class DbHandler extends SQLiteOpenHelper{
     public static String DB_PATH = "";
 
 >>>>>>> Много-много радостей
+=======
+    public static final int DATABASE_VERSION = 19;
+    public static final String DB_NAME = "info.db";
+    public static String DB_PATH = "";
+
+    public static int USER_ID = 0;
+
+>>>>>>> Готов метод загрузки изображений из определенной секции
     public static final String SALT = "AF*$#d+_21xsM";
 
     public static final String TABLE_COLLECTIONS = "collections";
@@ -47,11 +56,17 @@ public class DbHandler extends SQLiteOpenHelper{
     public static final String TABLE_ITEMS = "items";
     public static final String TABLE_USERS = "users";
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static final String TABLE_USERS_COLLECTIONS = "users_collections";
     public static final String TABLE_USERS_SECTIONS = "users_sections";
     public static final String TABLE_USERS_ITEMS = "users_items";
 =======
 >>>>>>> Много-много радостей
+=======
+    public static final String TABLE_USERS_COLLECTIONS = "users_collections";
+    public static final String TABLE_USERS_SECTIONS = "users_sections";
+    public static final String TABLE_USERS_ITEMS = "users_items";
+>>>>>>> Готов метод загрузки изображений из определенной секции
 
     public static final String KEY_GLOBAL_USER_ID = "_globalUserId";
 

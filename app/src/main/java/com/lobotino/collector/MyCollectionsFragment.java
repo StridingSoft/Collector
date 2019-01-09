@@ -24,6 +24,8 @@ import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -57,12 +59,145 @@ public class MyCollectionsFragment extends Fragment {
             throw mSQLException;
         }
 
+        drawAllUserItems(6);
+
+        return rootView;
+    }
+
+    private void drawAllUserItems(int sectionId)
+    {
         //Square
         GradientDrawable gradientDrawable = new GradientDrawable();
         gradientDrawable.setCornerRadius(15);
         gradientDrawable.setColor(Color.parseColor("#180c28"));
         //Square
 
+        RelativeLayout layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
+        RelativeLayout.LayoutParams imageParams, textViewParams;
+
+        Cursor cursorInventoryItems = mDb.query(DbHandler.TABLE_USERS_ITEMS, null, DbHandler.KEY_USER_ID + " = ?", new String[]{DbHandler.USER_ID + ""}, null, null, null);
+        int itemIdIndex = cursorInventoryItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
+        List<Integer> listItemsId = new ArrayList<Integer>();
+        if (cursorInventoryItems.moveToFirst()) {
+            do {
+                listItemsId.add(cursorInventoryItems.getInt(itemIdIndex));
+            } while (cursorInventoryItems.moveToNext());
+        }
+        cursorInventoryItems.close();
+
+        String columns[] = new String[]{DbHandler.KEY_ITEM_ID, DbHandler.KEY_ITEM_SECTION_ID, DbHandler.KEY_ITEM_NAME, DbHandler.KEY_ITEM_IMAGE_PATH};
+        String selection =  DbHandler.KEY_ITEM_SECTION_ID + " = " + sectionId;
+
+        Cursor cursorItemInSection = mDb.query(DbHandler.TABLE_ITEMS, columns, selection, null, null, null, null);
+
+        int pathIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
+        int nameIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_NAME);
+
+        int tempId;
+        int lastLeftId = -1;
+        int lastRightId = -1;
+        int countImages = 0;
+
+        String pathToImage, currentName;
+
+        int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+        pictureSize = Math.round((float) (screenWidth / 3));
+        int externalMargins = screenWidth / 11;
+        int topMargin = screenWidth / 10;
+        int botMargin = screenWidth / 17;
+        int puddingsSize = pictureSize / 15;
+
+        int currentId = 0;
+        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
+            if (cursorItemInSection.moveToFirst()) {
+                do {
+                    if(listItemsId.contains(cursorItemInSection.getInt(itemIdIndex))) {
+
+                        imageParams = new RelativeLayout.LayoutParams(pictureSize, pictureSize);
+
+                        if (countImages % 2 == 0) {
+                            if (lastLeftId == -1) {
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                                imageParams.setMargins(externalMargins, screenWidth / 16, 0, 0);
+                            } else {
+                                imageParams.addRule(RelativeLayout.BELOW, lastLeftId);
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                                imageParams.setMargins(externalMargins, topMargin, 0, 0);
+                            }
+
+                        } else {
+                            if (lastRightId == -1) {
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                                imageParams.setMargins(0, screenWidth / 16, externalMargins, 0);
+                            } else {
+                                imageParams.addRule(RelativeLayout.BELOW, lastRightId);
+                                imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                                imageParams.setMargins(0, topMargin, externalMargins, 0);
+                            }
+
+                        }
+
+                        pathToImage = cursorItemInSection.getString(pathIndex);
+
+                        ImageView currentImageView = new ImageView(context);
+                        currentImageView.setBackground(gradientDrawable);
+                        currentImageView.setLayoutParams(imageParams);
+                        currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
+                        tempId = View.generateViewId();
+                        currentImageView.setId(tempId);
+
+                        Object offer[] = {pathToImage, currentImageView};
+                        DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
+                        downloadScaledImage.execute(offer);
+
+                        layout.addView(currentImageView, currentId++);
+
+
+                        textViewParams = new RelativeLayout.LayoutParams(pictureSize, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+                        TextView tvImageName = new TextView(context);
+                        currentName = cursorItemInSection.getString(nameIndex);
+                        tvImageName.setTextColor(Color.parseColor("#ffffff"));
+                        tvImageName.setText(currentName);
+                        tvImageName.setGravity(Gravity.CENTER);
+
+                        if (countImages % 2 == 0) {
+                            lastLeftId = tempId;
+                            textViewParams.addRule(RelativeLayout.BELOW, lastLeftId);
+                            textViewParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                            textViewParams.setMargins(externalMargins, 5, 0, botMargin);
+                        } else {
+                            lastRightId = tempId;
+                            textViewParams.addRule(RelativeLayout.BELOW, lastRightId);
+                            textViewParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                            textViewParams.setMargins(0, 5, externalMargins, botMargin);
+                        }
+                        tvImageName.setLayoutParams(textViewParams);
+                        tvImageName.setTypeface(Typeface.DEFAULT_BOLD);
+
+                        layout.addView(tvImageName, currentId++);
+
+                        countImages++;
+                    }
+                } while (cursorItemInSection.moveToNext());
+                cursorItemInSection.close();
+            }
+
+        } else {
+            EasyPermissions.requestPermissions(this, "Access for storage",
+                    101, galleryPermissions);
+        }
+    }
+
+    private void drawAllItems()
+    {
+        //Square
+        GradientDrawable gradientDrawable = new GradientDrawable();
+        gradientDrawable.setCornerRadius(15);
+        gradientDrawable.setColor(Color.parseColor("#180c28"));
+        //Square
 
         RelativeLayout layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
         RelativeLayout.LayoutParams imageParams, textViewParams;
@@ -164,9 +299,7 @@ public class MyCollectionsFragment extends Fragment {
             EasyPermissions.requestPermissions(this, "Access for storage",
                     101, galleryPermissions);
         }
-        return rootView;
     }
-
 
 
     public class DownloadScaledImage extends AsyncTask<Object, Void, Bitmap>
@@ -184,13 +317,13 @@ public class MyCollectionsFragment extends Fragment {
             return inSampleSize;
         }
 
-        private ImageView image;
+        private ImageView imageView;
 
         @Override
         protected Bitmap doInBackground(Object... objects){
             try {
                 String pathToImage = (String)objects[0];
-                image = (ImageView)objects[1];
+                imageView = (ImageView)objects[1];
 
                 InputStream in = context.getAssets().open(pathToImage);
 
@@ -220,7 +353,7 @@ public class MyCollectionsFragment extends Fragment {
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
-            image.setImageBitmap(bitmap);
+            imageView.setImageBitmap(bitmap);
         }
     }
 }
