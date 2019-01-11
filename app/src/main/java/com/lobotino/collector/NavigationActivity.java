@@ -1,5 +1,6 @@
 package com.lobotino.collector;
 
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
@@ -12,13 +13,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     public static DbHandler dbHandler;
+
+    private MyCollectionsFragment fragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,11 @@ public class NavigationActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            if (fragment != null && fragment.fragmentStatus.equals("items")) {
+                fragment.drawAllSections(fragment.currentCollection);
+            } else {
+                super.onBackPressed();
+            }
         }
     }
 
@@ -80,7 +85,7 @@ public class NavigationActivity extends AppCompatActivity
             FragmentTransaction fragmentTransaction = fragmentManager
                     .beginTransaction();
 
-            MyCollectionsFragment fragment = new MyCollectionsFragment();
+            fragment = new MyCollectionsFragment();
             fragmentTransaction.replace(R.id.content_frame, fragment);
             fragmentTransaction.commit();
         }

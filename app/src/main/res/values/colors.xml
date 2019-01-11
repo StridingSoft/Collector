@@ -4,9 +4,13 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 <<<<<<< HEAD
+<<<<<<< HEAD
     <color name="colorBackground">#7e0000</color> //8F1D2C
 =======
     <color name="colorBackground">#8F1D2C</color>
 >>>>>>> Предельно начальная верстка
+=======
+    <color name="colorBackground">#7e0000</color> //8F1D2C
+>>>>>>> порядочек
     <color name="colorToolBar">#180c28</color>
 </resources>
