@@ -19,7 +19,7 @@ public class NavigationActivity extends AppCompatActivity
 
     public static DbHandler dbHandler;
 
-    private MyCollectionsFragment fragment;
+    private Fragment currentFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +40,14 @@ public class NavigationActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        navigationView.setCheckedItem(R.id.nav_my_collections);
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager
+                .beginTransaction();
+
+        currentFragment = new MyCollectionsFragment();
+        fragmentTransaction.replace(R.id.content_frame, currentFragment);
+        fragmentTransaction.commit();
     }
 
     @Override
@@ -48,10 +56,24 @@ public class NavigationActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            if (fragment != null && fragment.fragmentStatus.equals("items")) {
-                fragment.drawAllSections(fragment.currentCollection);
-            } else {
-                super.onBackPressed();
+            if (currentFragment != null) {
+                if (currentFragment instanceof MyCollectionsFragment) {
+                    MyCollectionsFragment fragment = (MyCollectionsFragment) currentFragment;
+                    if (fragment.fragmentStatus.equals("items"))
+                        fragment.drawAllUserSections(fragment.currentCollection);
+                    else if (fragment.fragmentStatus.equals("sections"))
+                        fragment.drawAllUserCollections();
+                } else {
+                    if (currentFragment instanceof CommunityCollectionsFragment) {
+                        CommunityCollectionsFragment fragment = (CommunityCollectionsFragment) currentFragment;
+                        if (fragment.fragmentStatus.equals("items"))
+                            fragment.drawAllSections(fragment.currentCollection);
+                        else if (fragment.fragmentStatus.equals("sections"))
+                            fragment.drawAllCollections();
+                    } else {
+                        super.onBackPressed();
+                    }
+                }
             }
         }
     }
@@ -85,9 +107,20 @@ public class NavigationActivity extends AppCompatActivity
             FragmentTransaction fragmentTransaction = fragmentManager
                     .beginTransaction();
 
-            fragment = new MyCollectionsFragment();
-            fragmentTransaction.replace(R.id.content_frame, fragment);
+            currentFragment = new MyCollectionsFragment();
+            fragmentTransaction.replace(R.id.content_frame, currentFragment);
             fragmentTransaction.commit();
+        } else{
+            if(id == R.id.nav_community_colletions)
+            {
+                FragmentManager fragmentManager = getFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager
+                        .beginTransaction();
+
+                currentFragment = new CommunityCollectionsFragment();
+                fragmentTransaction.replace(R.id.content_frame, currentFragment);
+                fragmentTransaction.commit();
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
