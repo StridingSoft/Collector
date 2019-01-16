@@ -25,10 +25,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile files('libs/sqlite-jdbc-3.23.1.jar')
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-<<<<<<< HEAD
 
     compile('com.google.android.gms:play-services-analytics:11.0.4') {
         force = true;
@@ -39,30 +36,20 @@ dependencies {
     compile('com.google.android.gms:play-services-gcm:11.0.4') {
         force = true;
     }
-=======
->>>>>>> Не рабочая версия, вылетает при запуске cursor
-=======
 
->>>>>>> Много-много радостей
+
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'commons-codec:commons-codec:1.11'
     compile 'com.android.support:design:26.+'
-<<<<<<< HEAD
-<<<<<<< HEAD
+
     compile 'com.android.support:percent:26.+'
     compile 'pub.devrel:easypermissions:0.2.1'
     compile 'com.android.support:support-v4:26.+'
-=======
->>>>>>> Не рабочая версия, вылетает при запуске cursor
-=======
+
     compile 'com.android.support:percent:26.+'
-<<<<<<< HEAD
->>>>>>> Много-много радостей
-=======
+
     compile 'pub.devrel:easypermissions:0.2.1'
-=======
->>>>>>> потихоньку навожу порядок, нужно ещё убираться
 
     compile('com.google.android.gms:play-services-analytics:11.0.4') {
         force = true;
@@ -73,9 +60,7 @@ dependencies {
     compile('com.google.android.gms:play-services-gcm:11.0.4') {
         force = true;
     }
-<<<<<<< HEAD
->>>>>>> Рабочая загрузка изображений
-=======
+
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'commons-codec:commons-codec:1.11'
@@ -83,6 +68,5 @@ dependencies {
     compile 'com.android.support:percent:26.+'
     compile 'pub.devrel:easypermissions:0.2.1'
     compile 'com.android.support:support-v4:26.+'
->>>>>>> потихоньку навожу порядок, нужно ещё убираться
     testCompile 'junit:junit:4.12'
 }

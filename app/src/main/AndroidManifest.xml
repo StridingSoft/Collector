@@ -6,53 +6,21 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-<<<<<<< HEAD
-<<<<<<< HEAD
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-=======
->>>>>>> Не рабочая версия, вылетает при запуске cursor
-=======
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
->>>>>>> Рабочая загрузка изображений
 
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="false"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        android:largeHeap="true"
->>>>>>> Рабочая загрузка изображений
-=======
->>>>>>> потихоньку навожу порядок, нужно ещё убираться
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-<<<<<<< HEAD
-<<<<<<< HEAD
         android:theme="@style/AppTheme"
         android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
         >
-=======
-        android:theme="@style/AppTheme">
-<<<<<<< HEAD
-        <activity android:name=".MainActivity">
-
-        </activity>
->>>>>>> Много-много радостей
-=======
->>>>>>> потихоньку навожу порядок, нужно ещё убираться
-=======
-        android:theme="@style/AppTheme"
-        android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
-        >
->>>>>>> Навел порядок, доделал навигацию, теперь мои коллекции работают как фрагмент
         <activity
             android:name=".RegisterActivity"
             android:label="Register" />
@@ -60,21 +28,7 @@
             android:name=".LoginActivity"
             android:label="Login" />
         <activity
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             android:name=".NavigationActivity"
-=======
-            android:name=".MyCollectionsActivity"
->>>>>>> Много-много радостей
-=======
-            android:name=".MyCollections"
-            android:label="@string/MyCollections" />
-        <activity
-=======
->>>>>>> Навел порядок, доделал навигацию, теперь мои коллекции работают как фрагмент
-            android:name=".NavigationActivity"
->>>>>>> потихоньку навожу порядок, нужно ещё убираться
             android:label="@string/title_activity_main2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
