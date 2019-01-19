@@ -21,6 +21,10 @@ public class NavigationActivity extends AppCompatActivity
 
     private Fragment currentFragment;
 
+    public void setCurrentFragment(Fragment fragment){
+        currentFragment = fragment;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,9 +49,22 @@ public class NavigationActivity extends AppCompatActivity
         FragmentTransaction fragmentTransaction = fragmentManager
                 .beginTransaction();
 
-        currentFragment = new MyCollectionsFragment();
-        fragmentTransaction.replace(R.id.content_frame, currentFragment);
-        fragmentTransaction.commit();
+        if(savedInstanceState == null || savedInstanceState.getBoolean("isEmpty"))
+        {
+            currentFragment = new CollectionsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putString("type", "myCollections");
+            bundle.putString("status", "all");
+            currentFragment.setArguments(bundle);
+            fragmentTransaction.replace(R.id.content_frame, currentFragment);
+            fragmentTransaction.commit();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isEmpty", currentFragment == null);
     }
 
     @Override
@@ -57,26 +74,51 @@ public class NavigationActivity extends AppCompatActivity
             drawer.closeDrawer(GravityCompat.START);
         } else {
             if (currentFragment != null) {
-                if (currentFragment instanceof MyCollectionsFragment) {
-                    MyCollectionsFragment fragment = (MyCollectionsFragment) currentFragment;
-                    if (fragment.fragmentStatus.equals("items"))
-                        fragment.drawAllUserSections(fragment.currentCollection);
-                    else if (fragment.fragmentStatus.equals("sections"))
-                        fragment.drawAllUserCollections();
-                } else {
-                    if (currentFragment instanceof CommunityCollectionsFragment) {
-                        CommunityCollectionsFragment fragment = (CommunityCollectionsFragment) currentFragment;
-                        if (fragment.fragmentStatus.equals("items"))
-                            fragment.drawAllSections(fragment.currentCollection);
-                        else if (fragment.fragmentStatus.equals("sections"))
-                            fragment.drawAllCollections();
-                    } else {
-                        super.onBackPressed();
+                if (currentFragment instanceof CollectionsFragment) {
+                    CollectionsFragment fragment = (CollectionsFragment) currentFragment;
+                    if(fragment.getStatus() != "all") {
+                        switch (fragment.getStatus()) {
+                            case "section": {
+                                if (fragment.getType().equals("myCollections"))
+                                    fragment.drawAllUserSections(fragment.getCurrentCollection());
+                                else
+                                    fragment.drawAllSections(fragment.getCurrentCollection());
+                                break;
+                            }
+                            case "collection":
+                            case "all": {
+                                if (fragment.getType().equals("myCollections"))
+                                    fragment.drawAllUserCollections();
+                                else
+                                    fragment.drawAllCollections();
+                                break;
+                            }
+                        }
+                    }
+                }else{
+                    if(currentFragment instanceof CurrentItemFragment)
+                    {
+                        CurrentItemFragment fragment = (CurrentItemFragment) currentFragment;
+                        CollectionsFragment collectionsFragment = new CollectionsFragment();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("id", fragment.getSectionId());
+                        bundle.putString("type", fragment.getType());
+                        bundle.putString("status", "section");
+
+                        collectionsFragment.setArguments(bundle);
+                        FragmentManager fragmentManager = getFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager
+                                .beginTransaction();
+                        fragmentTransaction.replace(R.id.content_frame, collectionsFragment);
+                        fragmentTransaction.commit();
                     }
                 }
+                } else {
+                super.onBackPressed();
             }
         }
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -107,7 +149,11 @@ public class NavigationActivity extends AppCompatActivity
             FragmentTransaction fragmentTransaction = fragmentManager
                     .beginTransaction();
 
-            currentFragment = new MyCollectionsFragment();
+            currentFragment = new CollectionsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putString("type", "myCollections");
+            bundle.putString("status", "all");
+            currentFragment.setArguments(bundle);
             fragmentTransaction.replace(R.id.content_frame, currentFragment);
             fragmentTransaction.commit();
         } else{
@@ -117,7 +163,11 @@ public class NavigationActivity extends AppCompatActivity
                 FragmentTransaction fragmentTransaction = fragmentManager
                         .beginTransaction();
 
-                currentFragment = new CommunityCollectionsFragment();
+                currentFragment = new CollectionsFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("type", "comCollections");
+                bundle.putString("status", "all");
+                currentFragment.setArguments(bundle);
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
                 fragmentTransaction.commit();
             }

@@ -14,7 +14,7 @@ import java.io.OutputStream;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 27;
+    public static final int DATABASE_VERSION = 30;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
@@ -60,7 +60,6 @@ public class DbHandler extends SQLiteOpenHelper{
         super(context, DB_NAME, null, DATABASE_VERSION);
 
 
-        //--
         if (android.os.Build.VERSION.SDK_INT >= 17)
             DB_PATH = context.getApplicationInfo().dataDir + "/databases/";
         else
@@ -70,49 +69,13 @@ public class DbHandler extends SQLiteOpenHelper{
         copyDataBase();
 
        this.getReadableDatabase();
-        //--
 
-
-        /*SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.query(DbHandler.TABLE_USERS, null, null, null, null, null, null);
-        if(cursor.moveToFirst()) {
-            globalUserID = cursor.getInt(cursor.getColumnIndex(DbHandler.KEY_GLOBAL_USER_ID));
-        }else{
-            globalUserID = 0;
-        }*/
     }
 
 
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-      /*  db.execSQL("CREATE TABLE " + TABLE_COLLECTIONS + "("
-                + KEY_COLLECTION_ID + " INTEGER,"
-                + KEY_COLLECTION_CREATOR_ID + " INTEGER,"
-                + KEY_COLLECTION_NAME + " TEXT,"
-                + KEY_COLLECTION_CREATE_DATE + " TEXT,"
-                + KEY_COLLECTION_DESCRIPTION + " TEXT)");
-
-        db.execSQL("CREATE TABLE " + TABLE_SECTIONS + "("
-                + KEY_SECTION_ID + " INTEGER,"
-                + KEY_SECTION_COLLECTION_ID + " INTEGER,"
-                + KEY_SECTION_NAME + " TEXT,"
-                + KEY_SECTION_DESCRIPTION + " TEXT)");
-
-        db.execSQL("CREATE TABLE " + TABLE_ITEMS + "("
-                + KEY_ITEM_ID + " INTEGER,"
-                + KEY_ITEM_SECTION_ID + " INTEGER,"
-                + KEY_ITEM_NAME + " TEXT,"
-                + KEY_ITEM_DESCRIPTION + " TEXT,"
-                + KEY_ITEM_IMAGE_PATH + " TEXT)");
-
-        db.execSQL("CREATE TABLE " + TABLE_USERS + "("
-                + KEY_GLOBAL_USER_ID + " INTEGER,"
-                + KEY_USER_ID + " INTEGER,"
-                + KEY_LOGIN + " TEXT,"
-                + KEY_PASSWORD_HASH + " TEXT,"
-                + KEY_REGISTER_DATE + " TEXT)");
-*/
 
     }
 
@@ -120,12 +83,6 @@ public class DbHandler extends SQLiteOpenHelper{
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (newVersion > oldVersion)
             mNeedUpdate = true;
-
-       /* db.execSQL("drop table if exists " + TABLE_COLLECTIONS);
-        db.execSQL("drop table if exists " + TABLE_SECTIONS);
-        db.execSQL("drop table if exists " + TABLE_ITEMS);
-        db.execSQL("drop table if exists " + TABLE_USERS);
-        onCreate(db);*/
     }
 
 
@@ -166,7 +123,6 @@ public class DbHandler extends SQLiteOpenHelper{
 
     private void copyDBFile() throws IOException {
         InputStream mInput = mContext.getAssets().open(DB_NAME);
-        //InputStream mInput = mContext.getResources().openRawResource(R.raw.info);
         OutputStream mOutput = new FileOutputStream(DB_PATH + DB_NAME);
         byte[] mBuffer = new byte[1024];
         int mLength;

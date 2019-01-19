@@ -21,7 +21,7 @@ public class DownloadScaledImage extends AsyncTask<Object, Void, Bitmap>
             final int widthRatio = Math.round((float) width / (float) reqWidth);
             inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
         }
-        return inSampleSize;
+        return inSampleSize - 1;
     }
 
     private ImageView imageView;
@@ -42,6 +42,7 @@ public class DownloadScaledImage extends AsyncTask<Object, Void, Bitmap>
             in.close();
 
             int size = calculateInSampleSize(o, pictureSize, pictureSize);
+            if(size < 1) size = 1;
             o = new BitmapFactory.Options();
             o.inSampleSize = size;
             o.inPreferredConfig = Bitmap.Config.RGB_565;
