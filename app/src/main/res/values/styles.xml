@@ -6,6 +6,11 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorControlActivated">@color/colorWhite</item>
+    </style>
+
+    <style name="AppTheme.ButtonReg">
+        <item name="android:background">@drawable/button_reg</item>
     </style>
 
     <style name="AppTheme.NoActionBar">

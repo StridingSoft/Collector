@@ -108,14 +108,14 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
                     SimpleDateFormat sdf = new SimpleDateFormat("MM.dd.yyyy");
                     String currentDate = sdf.format(new Date());
-
+/*
                     contentValues.put(DbHandler.KEY_USER_ID, DbHandler.globalUserID++);
                     contentValues.put(DbHandler.KEY_LOGIN, Login);
                     contentValues.put(DbHandler.KEY_PASSWORD_HASH, passwordSb.toString());
                     contentValues.put(DbHandler.KEY_REGISTER_DATE, currentDate);
 
                     database.insert(DbHandler.TABLE_USERS, null, contentValues);
-
+*/
                     etLogin.setText("");
                     etPassword.setText("");
                     etConfirmPassword.setText("");

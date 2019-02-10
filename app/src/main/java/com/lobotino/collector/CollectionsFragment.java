@@ -3,17 +3,21 @@ package com.lobotino.collector;
 import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,9 +28,24 @@ import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -44,6 +63,10 @@ public class CollectionsFragment extends Fragment {
     private Button buttonBack;
     private ActionBar actionBar;
     private String pathToImage;
+    private int countImages = 0;
+    private int currentId = 0;
+    private String currentTitle = "";
+    private List<AsyncCurrentItem> offers;
 
     private String fragmentType = "myCollections";  //myCollections or comCollections
     private String fragmentStatus = "all";
@@ -51,10 +74,7 @@ public class CollectionsFragment extends Fragment {
     private int currentCollection = 0;
     private int currentSection = 0;
 
-    public int getCurrentCollection()
-    {
-        return currentCollection;
-    }
+    private Connection connection;
 
     public int getCurrentSection(){
         return currentSection;
@@ -70,10 +90,12 @@ public class CollectionsFragment extends Fragment {
         return fragmentStatus;
     }
 
+    public String getCurrentTitle() { return currentTitle; }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
+        offers = new ArrayList<AsyncCurrentItem>();
         rootView = inflater.inflate(R.layout.fragment_my_collections, container, false);
         NavigationActivity navigationActivity = (NavigationActivity) getActivity();
         navigationActivity.setCurrentFragment(this);
@@ -89,11 +111,7 @@ public class CollectionsFragment extends Fragment {
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
         }
-        try {
-            mDb = dbHandler.getWritableDatabase();
-        } catch (SQLException mSQLException) {
-            throw mSQLException;
-        }
+            mDb = dbHandler.getDataBase();
 
         externalMargins = screenWidth / 11;
         topMargin = screenWidth / 9;
@@ -125,27 +143,34 @@ public class CollectionsFragment extends Fragment {
             type = savedInstanceState.getString("type");
             status = savedInstanceState.getString("status");
             id = savedInstanceState.getInt("id");
+            currentTitle = savedInstanceState.getString("title");
         }else {
             type = getArguments().getString("type");
             status = getArguments().getString("status");
             id = getArguments().getInt("id");
+            currentTitle = getArguments().getString("title");
         }
+
+        if (!EasyPermissions.hasPermissions(context, galleryPermissions)) {
+                EasyPermissions.requestPermissions(this, "Access for storage",
+                        101, galleryPermissions);
+            }
 
             switch (status) {
                 case "collection": {
                     currentCollection = id;
                     if (type.equals("myCollections"))
-                        drawAllUserSections(currentCollection);
+                        printAllSections();
                     else
-                        drawAllSections(currentCollection);
+                        printAllSections();
                     break;
                 }
                 case "section": {
                     currentSection = id;
                     if (type.equals("myCollections"))
-                        drawAllUserItems(currentSection);
+                        printAllItems();
                     else
-                        drawAllItems(currentSection);
+                        printAllItems();
                     break;
                 }
                 case "item": {
@@ -160,15 +185,55 @@ public class CollectionsFragment extends Fragment {
                 }
                 default: {
                     if (type.equals("myCollections"))
-                        drawAllUserCollections();
-                    else
-                        drawAllCollections();
+                        printAllCollections();
+                    else {
+                        printAllCollections();
+                    }
                 }
             }
             fragmentType = type;
             fragmentStatus = status;
 
+
         return rootView;
+    }
+
+    public void clearOffers()
+    {
+        for(int i = 0; i < offers.size(); i++)
+        {
+            offers.get(i).cancel(true);
+        }
+        offers.clear();
+    }
+
+    public void closeConnection()
+    {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printAllCollections(){
+        new AsyncDrawAllCollections().execute();
+    }
+
+    public void printAllSections(){
+        new AsyncDrawAllSections(currentCollection, currentTitle).execute();
+    }
+
+    public void printAllSections(int colId){
+        new AsyncDrawAllSections(colId, currentTitle).execute();
+    }
+
+    public void printAllItems(){
+        new AsyncDrawAllItems(currentSection, currentTitle).execute();
+    }
+
+    public void printAllItems(int secId){
+        new AsyncDrawAllItems(secId, currentTitle).execute();
     }
 
     private TextView getTextViewBySide(String text, int countImages)
@@ -222,523 +287,598 @@ public class CollectionsFragment extends Fragment {
         return imageParams;
     }
 
-    public void drawAllUserItems(final int sectionId)
+    private class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap>
     {
-        currentSection = sectionId;
-        fragmentStatus = "section";
-        layout.removeAllViews();
-        buttonBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                drawAllUserSections(currentCollection);
-            }
-        });
-        layout.addView(buttonBack);
-        scrollView.scrollTo(0, 0);
+        private String SQL;
+        private String name, desc, status;
+        private int collectionId, secId, itemId;
 
-        Cursor cursorCurrentSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_SECTION_NAME}, DbHandler.KEY_SECTION_ID + " = " + sectionId, null, null, null, null);
-        if(cursorCurrentSection.moveToFirst())
-            actionBar.setTitle(cursorCurrentSection.getString(cursorCurrentSection.getColumnIndex(DbHandler.KEY_SECTION_NAME)));
-        cursorCurrentSection.close();
 
-        Cursor cursorInventoryItems = mDb.query(DbHandler.TABLE_USERS_ITEMS, null, DbHandler.KEY_USER_ID + " = ?", new String[]{DbHandler.USER_ID + ""}, null, null, null);
-        int itemIdIndex = cursorInventoryItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
-        List<Integer> listItemsId = new ArrayList<Integer>();
-        if (cursorInventoryItems.moveToFirst()) {
-            do {
-                listItemsId.add(cursorInventoryItems.getInt(itemIdIndex));
-            } while (cursorInventoryItems.moveToNext());
+        public AsyncCurrentItem(int itemId, int secId, String status) {
+            this.itemId = itemId;
+            this.secId = secId;
+            this.status = status;
         }
-        cursorInventoryItems.close();
 
-        String columns[] = new String[]{DbHandler.KEY_ITEM_ID, DbHandler.KEY_ITEM_SECTION_ID, DbHandler.KEY_ITEM_NAME, DbHandler.KEY_ITEM_IMAGE_PATH};
-        String selection =  DbHandler.KEY_ITEM_SECTION_ID + " = " + sectionId;
+        public AsyncCurrentItem(int itemId, int secId, String name, String status) {
+            this.itemId = itemId;
+            this.name = name;
+            this.status = status;
+            this.secId = secId;
+        }
 
-        Cursor cursorItemInSection = mDb.query(DbHandler.TABLE_ITEMS, columns, selection, null, null, null, null);
+        public AsyncCurrentItem(int itemId, int secId, int collectionId, String name, String status) {
+            this.itemId = itemId;
+            this.name = name;
+            this.status = status;
+            this.collectionId = collectionId;
+            this.secId = secId;
+        }
 
-        int pathIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
-        int nameIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_NAME);
-        itemIdIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_ID);
 
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            if (cursorItemInSection.moveToFirst()) {
-                do {
-                    final int currentItemId = cursorItemInSection.getInt(itemIdIndex);
-                    if(listItemsId.contains(currentItemId)){
-                        pathToImage = cursorItemInSection.getString(pathIndex);
+        private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+            final int height = options.outHeight;
+            final int width = options.outWidth;
+            int inSampleSize = 1;
 
-                        ImageView currentImageView = new ImageView(context);
-                        currentImageView.setBackground(gradientDrawable);
-                        currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                        currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                        tempId = View.generateViewId();
-                        currentImageView.setId(tempId);
-                        currentImageView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
+            if (height > reqHeight || width > reqWidth) {
+                final int heightRatio = Math.round((float) height / (float) reqHeight);
+                final int widthRatio = Math.round((float) width / (float) reqWidth);
+                inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
+            }
+            return inSampleSize - 1;
+        }
+
+
+        @Override
+        protected Bitmap doInBackground(String... query) {
+            try {
+
+                Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                Statement st = null;
+                ResultSet rs = null;
+                try {
+                    Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                    int count = cursor.getCount();
+                    byte[] blob = null;
+                    if (count > 0) {
+                        if (cursor.moveToFirst()) {
+                            blob = cursor.getBlob(cursor.getColumnIndex(DbHandler.KEY_MINI_IMAGE));
+                            if (status.equals("item"))
+                                name = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_NAME));
+                        }
+                    } else {
+                        if(DbHandler.isOnline(context)) {
+                            if(DbHandler.needToReconnect)
+                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                            else
+                                connection = DbHandler.getConnection();
+                        }
+
+                        if (connection != null) {
+                            SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
+                            st = connection.createStatement();
+                            rs = st.executeQuery(SQL);
+
+                            if (rs != null && !isCancelled()) {
+                                rs.next();
+                                int id = rs.getInt(1);
+                                String tname = rs.getString(2);
+                                if (status.equals("item")) name = tname;
+
+                                String desc = rs.getString(3);
+                                blob = rs.getBytes(6);
+                                String serverDateStr = rs.getString(7);
+
+                                ContentValues contentValues = new ContentValues();
+                                contentValues.put(DbHandler.KEY_ID, id);
+                                contentValues.put(DbHandler.KEY_SECTION_ID, secId);
+                                contentValues.put(DbHandler.KEY_NAME, tname);
+                                contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
+                                contentValues.put(DbHandler.KEY_MINI_IMAGE, blob);
+                                contentValues.put(DbHandler.KEY_ITEM_STATUS, "missing");
+                                contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, serverDateStr);
+                                mDb.insert(DbHandler.TABLE_ITEMS, null, contentValues);
+
+                                rs.close();
+                                st.close();
+                            }
+                        }
+                    }
+
+                    cursor.close();
+                    BitmapFactory.Options o = new BitmapFactory.Options();
+                    o.inJustDecodeBounds = true;
+                    BitmapFactory.decodeByteArray(blob, 0, blob.length, o);
+
+
+                    int size = calculateInSampleSize(o, pictureSize, pictureSize);
+                    if (size < 1) size = 1;
+                    o = new BitmapFactory.Options();
+                    o.inSampleSize = size;
+                    o.inPreferredConfig = Bitmap.Config.RGB_565;
+
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(blob, 0, blob.length, o);
+
+                    return bitmap;
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }  finally {
+                    try {
+                        if (rs != null) rs.close();
+                        if (st != null) st.close();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
+                }
+            }
+            catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            if (bitmap != null) {
+
+                ImageView currentImageView = new ImageView(context);
+
+                currentImageView.setImageBitmap(bitmap);
+                currentImageView.setBackground(gradientDrawable);
+                currentImageView.setLayoutParams(getImageParamsBySide(countImages));
+                currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
+                tempId = View.generateViewId();
+                currentImageView.setId(tempId);
+                currentImageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        clearOffers();
+                        switch (status) {
+                            case "item": {
                                 CurrentItemFragment currentItemFragment = new CurrentItemFragment();
                                 Bundle bundle = new Bundle();
-                                bundle.putInt("id", currentItemId);
-                                bundle.putInt("sectionId", sectionId);
+                                bundle.putInt("id", itemId);
+                                bundle.putInt("itemId", itemId);
+                                bundle.putInt("sectionId", secId);
                                 bundle.putString("type", fragmentType);
+                                bundle.putString("title", currentTitle);
                                 currentItemFragment.setArguments(bundle);
                                 FragmentManager fragmentManager = getFragmentManager();
                                 fragmentManager.beginTransaction().replace(R.id.content_frame, currentItemFragment).commit();
+                                break;
                             }
-                        });
-
-                        Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                        DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                        downloadScaledImage.execute(offer);
-
-                        layout.addView(currentImageView, currentId++);
-                        layout.addView(getTextViewBySide(cursorItemInSection.getString(nameIndex), countImages), currentId++);
-                        countImages++;
+                            case "section": {
+                                AsyncDrawAllItems drawAllItems = new AsyncDrawAllItems(secId, name);
+                                drawAllItems.execute();
+                                break;
+                            }
+                            case "collection": {
+                                AsyncDrawAllSections drawAllSections = new AsyncDrawAllSections(collectionId, name);
+                                drawAllSections.execute();
+                                break;
+                            }
+                        }
                     }
-                } while (cursorItemInSection.moveToNext());
-                cursorItemInSection.close();
+                });
+                layout.addView(currentImageView, currentId++);
+                layout.addView(getTextViewBySide(name, countImages), currentId++);
+                countImages++;
             }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
         }
     }
 
-    public void drawAllUserSections(int collectionId)
+    private class AsyncDrawAllItems extends AsyncTask<Void, Integer, Void>
     {
-        currentCollection = collectionId;
-        fragmentStatus = "collection";
-        layout.removeAllViews();
-        buttonBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                drawAllUserCollections();
-            }
-        });
-        layout.addView(buttonBack);
-        scrollView.scrollTo(0, 0);
+        private String SQL, sectionName;
+        private int secId;
 
-        Cursor cursorCurrentCollection = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_COLLECTION_NAME}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
-        if(cursorCurrentCollection.moveToFirst())
-            actionBar.setTitle(cursorCurrentCollection.getString(cursorCurrentCollection.getColumnIndex(DbHandler.KEY_COLLECTION_NAME)));
-        cursorCurrentCollection.close();
-
-        String columns[] = new String[]{DbHandler.KEY_ITEM_ID, DbHandler.KEY_ITEM_SECTION_ID, DbHandler.KEY_ITEM_NAME, DbHandler.KEY_ITEM_IMAGE_PATH};
-        Cursor cursorInventoryItems = mDb.query(DbHandler.TABLE_USERS_ITEMS, null, DbHandler.KEY_USER_ID + " = ?", new String[]{DbHandler.USER_ID + ""}, null, null, null);
-        int itemIdIndex = cursorInventoryItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
-        List<Integer> listItemsId = new ArrayList<Integer>();
-        if (cursorInventoryItems.moveToFirst()) {
-            do {
-                listItemsId.add(cursorInventoryItems.getInt(itemIdIndex));
-            } while (cursorInventoryItems.moveToNext());
-        }
-        cursorInventoryItems.close();
-
-
-        Cursor cursorUserItems = mDb.query(DbHandler.TABLE_ITEMS, columns, null, null, null, null, null);
-        int sectionIdIndex = cursorUserItems.getColumnIndex(DbHandler.KEY_ITEM_SECTION_ID);
-        int pathIndex = cursorUserItems.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
-        itemIdIndex = cursorUserItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
-        List<Integer> listSectionsId = new ArrayList<Integer>();
-        if(cursorUserItems.moveToFirst())
-        {
-            do {
-                int currentSectionId = cursorUserItems.getInt(sectionIdIndex);
-                int currentItemId = cursorUserItems.getInt(itemIdIndex);
-                if (listItemsId.contains(currentItemId) && !listSectionsId.contains(currentSectionId)) {
-                    listSectionsId.add(currentSectionId);
-                }
-            } while(cursorUserItems.moveToNext());
+        public AsyncDrawAllItems(int secId, String sectionName) {
+            this.secId = secId;
+            this.sectionName = sectionName;
         }
 
-        String selection =  DbHandler.KEY_SECTION_COLLECTION_ID + " = " + collectionId;
-        columns = new String[]{DbHandler.KEY_SECTION_ID, DbHandler.KEY_SECTION_NAME, DbHandler.KEY_SECTION_COLLECTION_ID};
-        Cursor cursorUserSections = mDb.query(DbHandler.TABLE_SECTIONS, columns, selection, null, null, null, null);
 
-        int nameIndex = cursorUserSections.getColumnIndex(DbHandler.KEY_SECTION_NAME);
-        int idSectionIndex = cursorUserSections.getColumnIndex(DbHandler.KEY_SECTION_ID);
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            if (cursorUserSections.moveToFirst()) {
-                do {
-                    final int currentSectionId = cursorUserSections.getInt(idSectionIndex);
-                    if(listSectionsId.contains(currentSectionId)) {
-                        pathToImage = "";
-                        if(cursorUserItems.moveToFirst())
-                        {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            actionBar.setTitle(sectionName);
+            currentTitle = sectionName;
+            fragmentStatus = "section";
+            currentSection = secId;
+            offers.clear();
+            layout.removeAllViews();
+            lastLeftId = -1;
+            lastRightId = -1;
+            countImages = 0;
+            currentId = 0;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+                Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                Statement stSection = null;
+                ResultSet rsSection = null;
+                Statement stItems = null;
+                ResultSet rsItems = null;
+                Cursor cursorSection = null;
+                Cursor cursorItems = null;
+                try {
+                    if (!DbHandler.isOnline(context)) {
+                        cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                        if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
                             do {
-                                int cursorSectionId = cursorUserItems.getInt(sectionIdIndex);
-                                int cursorItemId = cursorUserItems.getInt(itemIdIndex);
-                                if(listItemsId.contains(cursorItemId)){
-                                    if (currentSectionId == cursorSectionId) {
-                                        pathToImage = cursorUserItems.getString(pathIndex);
-                                        break;
+                                publishProgress(cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID)), secId);
+                            } while (cursorItems.moveToNext());
+                        }
+                        cursorItems.close();
+                    } else {
+                        if(DbHandler.isOnline(context)) {
+                            if(DbHandler.needToReconnect)
+                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                            else
+                                connection = DbHandler.getConnection();
+                        }
+
+                        if (connection != null) {
+                            SQL = "SELECT " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
+                            stItems = connection.createStatement();
+                            rsItems = stItems.executeQuery(SQL);
+
+                            if (rsItems != null) {
+                                while (rsItems.next()) {
+                                    publishProgress(rsItems.getInt(1), secId);
+                                }
+                            }
+                        }
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }  finally {
+                    try {
+                        if (rsSection != null) rsSection.close();
+                        if (stSection != null) stSection.close();
+                        if (rsItems != null) rsItems.close();
+                        if (stItems != null) stItems.close();
+                        if (cursorSection != null) cursorSection.close();
+                        if (cursorItems != null) cursorItems.close();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
+                }
+            }
+            catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            AsyncCurrentItem currentItem = new AsyncCurrentItem(values[0], values[1], "item");
+            offers.add(currentItem);
+            currentItem.execute();
+        }
+    }
+
+    private class AsyncDrawAllSections extends AsyncTask<Void, Object, String>
+    {
+        int collectionId;
+        String SQL, collectionName;
+
+
+        public AsyncDrawAllSections(int collectionId, String collectionName) {
+            currentCollection = collectionId;
+            this.collectionId = collectionId;
+            this.collectionName = collectionName;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            actionBar.setTitle(collectionName);
+            currentTitle = collectionName;
+            fragmentStatus = "collection";
+            offers.clear();
+            layout.removeAllViews();
+            lastLeftId = -1;
+            lastRightId = -1;
+            countImages = 0;
+            currentId = 0;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            try {
+                Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                Statement stSections = null;
+                Statement stItems = null;
+                ResultSet rsSections = null;
+                ResultSet rsItems = null;
+                try {
+                    if(!DbHandler.isOnline(context)) {
+                        Cursor cursorSections = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
+                        if (cursorSections.getCount() > 0 && cursorSections.moveToFirst()) {
+                            do {
+                                String name = cursorSections.getString(cursorSections.getColumnIndex(DbHandler.KEY_NAME));
+                                int secId = cursorSections.getInt(cursorSections.getColumnIndex(DbHandler.KEY_ID));
+                                Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
+                                    int idItem = cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID));
+                                    publishProgress(new Object[]{idItem, secId, name});
+                                }
+                            } while (cursorSections.moveToNext());
+                        }
+                    } else {
+                        if(DbHandler.isOnline(context)) {
+                            if(DbHandler.needToReconnect)
+                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                            else
+                                connection = DbHandler.getConnection();
+                        }
+
+                        if (connection != null) {
+                            SQL = "SELECT * FROM " + DbHandler.TABLE_SECTIONS + " WHERE " + DbHandler.KEY_COLLECTION_ID + " = " + collectionId;
+                            stSections = connection.createStatement();
+                            rsSections = stSections.executeQuery(SQL);
+                            if (rsSections != null) {
+                                while (rsSections.next()) {
+                                    int secId = rsSections.getInt(1);
+
+                                    Cursor cursorSections = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, DbHandler.KEY_ID + " = " + secId, null, null, null, null);
+                                    if (cursorSections.getCount() <= 0) {
+                                        int collectionId = rsSections.getInt(2);
+                                        String name = rsSections.getString(3);
+                                        String desc = rsSections.getString(4);
+
+                                        ContentValues contentValues = new ContentValues();
+                                        contentValues.put(DbHandler.KEY_ID, secId);
+                                        contentValues.put(DbHandler.KEY_COLLECTION_ID, collectionId);
+                                        contentValues.put(DbHandler.KEY_NAME, name);
+                                        contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
+                                        mDb.insert(DbHandler.TABLE_SECTIONS, null, contentValues);
+
+                                        SQL = "SELECT " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
+                                        stItems = connection.createStatement();
+                                        rsItems = stItems.executeQuery(SQL);
+                                        try {
+                                            if (rsItems != null) {
+                                                rsItems.next();
+                                                int itemId = rsItems.getInt(1);
+                                                publishProgress(new Object[]{itemId, secId, name});
+                                            }
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
+                                    } else {
+                                        if (cursorSections.moveToFirst()) {
+                                            String name = cursorSections.getString(cursorSections.getColumnIndex(DbHandler.KEY_NAME));
+                                            Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                            if (cursorItems.moveToFirst()) {
+                                                int itemId = cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID));
+                                                publishProgress(new Object[]{itemId, secId, name});
+                                            }
+                                            cursorItems.close();
+                                        }
+                                    }
+                                    cursorSections.close();
+                                }
+                            }
+                        }
+                    }
+                }catch (SQLException e) {
+                    e.printStackTrace();
+                }  finally {
+                    try {
+                        if (rsSections != null) rsSections.close();
+                        if (rsItems != null) rsItems.close();
+                        if (stSections != null) stSections.close();
+                        if (stItems != null) stItems.close();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
+                }
+            }
+            catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            super.onProgressUpdate(values);
+            AsyncCurrentItem currentItem = new AsyncCurrentItem((int)values[0], (int)values[1], (String)values[2], "section");
+            offers.add(currentItem);
+            currentItem.execute();
+        }
+    }
+
+    public class AsyncDrawAllCollections extends AsyncTask<Void, Object, Void>
+    {
+        String SQL;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            fragmentStatus = "all";
+            offers.clear();
+            layout.removeAllViews();
+            lastLeftId = -1;
+            lastRightId = -1;
+            countImages = 0;
+            currentId = 0;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+                Class.forName("net.sourceforge.jtds.jdbc.Driver");
+
+                Statement stCollections = null;
+                Statement stSections = null;
+                Statement stItems = null;
+                ResultSet rsCollections = null;
+                ResultSet rsSections = null;
+                ResultSet rsItems = null;
+                try {
+                    if (!DbHandler.isOnline(context)) {
+                        Cursor cursorCollections = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, null, null, null, null, null);
+                        if (cursorCollections.moveToFirst()) {
+                            do {
+                                int collectionId = cursorCollections.getInt(cursorCollections.getColumnIndex(DbHandler.KEY_ID));
+                                String name = cursorCollections.getString(cursorCollections.getColumnIndex(DbHandler.KEY_NAME));
+                                Cursor cursorSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
+                                if (cursorSection.moveToFirst()) {
+                                    int secId = cursorSection.getInt(cursorSection.getColumnIndex(DbHandler.KEY_ID));
+                                    Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                    if (cursorItem.moveToFirst()) {
+                                        int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
+                                        publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                    }
+                                    cursorItem.close();
+                                }
+                                cursorSection.close();
+                            } while (cursorCollections.moveToNext());
+                        }
+                        cursorCollections.close();
+                    } else {
+                        if (DbHandler.needToReconnect)
+                            if(DbHandler.isOnline(context)) {
+                                if(DbHandler.needToReconnect)
+                                    connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                                else
+                                    connection = DbHandler.getConnection();
+                            }
+
+                        if (connection != null) {
+                            SQL = "SELECT * FROM " + DbHandler.TABLE_COLLECTIONS;
+                            stCollections = connection.createStatement();
+                            rsCollections = stCollections.executeQuery(SQL);
+
+                            if (rsCollections != null) {
+                                while (rsCollections.next()) {
+                                    int collectionId = rsCollections.getInt(1);
+
+                                    Cursor cursorCollections = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, DbHandler.KEY_ID + " = " + collectionId, null, null, null, null);
+                                    if (cursorCollections.getCount() <= 0) {
+                                        String name = rsCollections.getString(2);
+                                        String desc = rsCollections.getString(3);
+
+                                        ContentValues cvCollection = new ContentValues();
+                                        cvCollection.put(DbHandler.KEY_ID, collectionId);
+                                        cvCollection.put(DbHandler.KEY_NAME, name);
+                                        cvCollection.put(DbHandler.KEY_DESCRIPTION, desc);
+                                        mDb.insert(DbHandler.TABLE_COLLECTIONS, null, cvCollection);
+
+                                        SQL = "SELECT TOP 1 * FROM " + DbHandler.TABLE_SECTIONS + " WHERE " + DbHandler.KEY_COLLECTION_ID + " = " + collectionId;
+                                        stSections = connection.createStatement();
+                                        rsSections = stSections.executeQuery(SQL);
+
+                                        if (rsSections != null) {
+                                            try {
+                                                rsSections.next();
+                                                int secId = rsSections.getInt(1);
+
+                                                Cursor cursorSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_ID + " = " + secId, null, null, null, null);
+                                                if(cursorSection.getCount() <= 0){
+                                                    try {
+                                                        String nameSection = rsSections.getString(3);
+                                                        String descSection = rsSections.getString(4);
+                                                        ContentValues cvSection = new ContentValues();
+                                                        cvSection.put(DbHandler.KEY_ID, secId);
+                                                        cvSection.put(DbHandler.KEY_COLLECTION_ID, collectionId);
+                                                        cvSection.put(DbHandler.KEY_NAME, nameSection);
+                                                        cvSection.put(DbHandler.KEY_DESCRIPTION, descSection);
+                                                        mDb.insert(DbHandler.TABLE_SECTIONS, null, cvSection);
+
+                                                        SQL = "SELECT TOP 1 " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
+                                                        stItems = connection.createStatement();
+                                                        rsItems = stItems.executeQuery(SQL);
+
+                                                        if (rsItems != null) {
+                                                            rsItems.next();
+                                                            int itemId = rsItems.getInt(1);
+                                                            publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                        }
+                                                    }
+                                                    catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }else{
+                                                    if(cursorSection.moveToFirst()) {
+                                                        Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                                        if (cursorItem.moveToFirst()) {
+                                                            int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
+                                                            publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                        }
+                                                        cursorItem.close();
+                                                    }
+                                                }
+                                                cursorSection.close();
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    } else {
+                                        if (cursorCollections.moveToFirst()) {
+                                            String name = cursorCollections.getString(cursorCollections.getColumnIndex(DbHandler.KEY_NAME));
+                                            Cursor cursorSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
+                                            if (cursorSection.moveToFirst()) {
+                                                int secId = cursorSection.getInt(cursorSection.getColumnIndex(DbHandler.KEY_ID));
+                                                Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                                if (cursorItem.moveToFirst()) {
+                                                    int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
+                                                    publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                }
+                                                cursorItem.close();
+                                            }
+                                            cursorSection.close();
+                                        }
+                                        cursorCollections.close();
                                     }
                                 }
-                            } while(cursorUserItems.moveToNext());
-                        }
-                        ImageView currentImageView = new ImageView(context);
-                        currentImageView.setBackground(gradientDrawable);
-                        currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                        currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                        currentImageView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                drawAllUserItems(currentSectionId);
                             }
-                        });
-
-                        tempId = View.generateViewId();
-                        currentImageView.setId(tempId);
-
-                        Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                        DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                        downloadScaledImage.execute(offer);
-
-                        layout.addView(currentImageView, currentId++);
-                        layout.addView(getTextViewBySide(cursorUserSections.getString(nameIndex), countImages), currentId++);
-                        countImages++;
+                        }
                     }
-                } while (cursorUserSections.moveToNext());
-                cursorUserItems.close();
-                cursorUserSections.close();
-            }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
-        }
-    }
-
-    public void drawAllUserCollections()
-    {
-        layout.removeAllViews();
-        scrollView.scrollTo(0, 0);
-        actionBar.setTitle("Мои коллекции");
-        fragmentStatus = "all";
-
-        Cursor cursorInventoryItems = mDb.query(DbHandler.TABLE_USERS_ITEMS, null, DbHandler.KEY_USER_ID + " = ?", new String[]{DbHandler.USER_ID + ""}, null, null, null);
-        int itemIdIndex = cursorInventoryItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
-        List<Integer> userItemsIds = new ArrayList<Integer>();
-        if (cursorInventoryItems.moveToFirst()) {
-            do {
-                userItemsIds.add(cursorInventoryItems.getInt(itemIdIndex));
-            } while (cursorInventoryItems.moveToNext());
-        }
-        cursorInventoryItems.close();
-
-        String columns[] = new String[]{DbHandler.KEY_ITEM_ID, DbHandler.KEY_ITEM_SECTION_ID, DbHandler.KEY_ITEM_NAME, DbHandler.KEY_ITEM_IMAGE_PATH};
-        Cursor cursorAllItems = mDb.query(DbHandler.TABLE_ITEMS, columns, null, null, null, null, null);
-        int sectionIdIndex = cursorAllItems.getColumnIndex(DbHandler.KEY_ITEM_SECTION_ID);
-        itemIdIndex = cursorAllItems.getColumnIndex(DbHandler.KEY_ITEM_ID);
-        List<Integer> userSectionsIds = new ArrayList<Integer>();
-        if(cursorAllItems.moveToFirst())
-        {
-            do {
-                int currentSectionId = cursorAllItems.getInt(sectionIdIndex);
-                int currentItemId = cursorAllItems.getInt(itemIdIndex);
-                if (userItemsIds.contains(currentItemId) && !userSectionsIds.contains(currentSectionId)) {
-                    userSectionsIds.add(currentSectionId);
-                }
-            } while(cursorAllItems.moveToNext());
-        }
-        cursorAllItems.close();
-
-        columns = new String[]{DbHandler.KEY_SECTION_ID, DbHandler.KEY_SECTION_NAME, DbHandler.KEY_SECTION_COLLECTION_ID};
-        Cursor cursorAllSections = mDb.query(DbHandler.TABLE_SECTIONS, columns, null, null, null, null, null);
-        int idCollIndex = cursorAllSections.getColumnIndex(DbHandler.KEY_SECTION_COLLECTION_ID);
-        int idCurSecIndex = cursorAllSections.getColumnIndex(DbHandler.KEY_SECTION_ID);
-        List<Integer> userCollectionsIds = new ArrayList<Integer>();
-        if(cursorAllSections.moveToFirst())
-        {
-            do{
-                int currentCollectionId = cursorAllSections.getInt(idCollIndex);
-                int currentSectionId = cursorAllSections.getInt(idCurSecIndex);
-                if(userSectionsIds.contains(currentSectionId) && !userCollectionsIds.contains(currentCollectionId))
-                {
-                    userCollectionsIds.add(currentCollectionId);
-                }
-            }while(cursorAllSections.moveToNext());
-        }
-        cursorAllSections.close();
-
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-
-
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            for (int i = 0; i < userCollectionsIds.size(); i++) {
-                final int currentCollId = userCollectionsIds.get(i);
-
-                Cursor tempSectionsCursor = mDb.query(DbHandler.TABLE_SECTIONS, null, DbHandler.KEY_SECTION_COLLECTION_ID + " = " + currentCollId, null, null, null, null);
-                if (tempSectionsCursor.moveToFirst()) {
-                    do {
-                        int currentSecId = tempSectionsCursor.getInt(tempSectionsCursor.getColumnIndex(DbHandler.KEY_SECTION_ID));
-                        if(userSectionsIds.contains(currentSecId)) {
-                            pathToImage = "";
-                            Cursor tempItemsCursor = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ITEM_SECTION_ID + " = " + currentSecId, null, null, null, null);
-                            if (tempItemsCursor.moveToFirst()) {
-                                do {
-                                    int currentItemId = tempItemsCursor.getInt(tempItemsCursor.getColumnIndex(DbHandler.KEY_ITEM_ID));
-                                    if (userItemsIds.contains(currentItemId)) {
-                                        pathToImage = tempItemsCursor.getString(tempItemsCursor.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH));
-                                        break;
-                                    }
-                                } while (tempItemsCursor.moveToNext());
-                            }
-                            tempItemsCursor.close();
-                            break;
-                        }
-                    }while(tempSectionsCursor.moveToNext());
-                    tempSectionsCursor.close();
-
-                    ImageView currentImageView = new ImageView(context);
-                    currentImageView.setBackground(gradientDrawable);
-                    currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                    currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                    currentImageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            drawAllUserSections(currentCollId);
-                        }
-                    });
-
-                    tempId = View.generateViewId();
-                    currentImageView.setId(tempId);
-
-                    Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                    DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                    downloadScaledImage.execute(offer);
-
-                    layout.addView(currentImageView, currentId++);
-                    Cursor tempCollCursor = mDb.query(DbHandler.TABLE_COLLECTIONS, null, DbHandler.KEY_COLLECTION_ID + " = " + currentCollId, null, null, null, null);
-                    if(tempCollCursor.moveToFirst())
-                        layout.addView(getTextViewBySide(tempCollCursor.getString(tempCollCursor.getColumnIndex(DbHandler.KEY_COLLECTION_NAME)), countImages), currentId++);
-                    tempCollCursor.close();
-                    countImages++;
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }  finally {
+                    try {
+                        if (rsCollections != null) rsCollections.close();
+                        if (rsSections != null) rsSections.close();
+                        if (rsItems != null) rsItems.close();
+                        if (stCollections != null) stCollections.close();
+                        if (stSections != null) stSections.close();
+                        if (stItems != null) stItems.close();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
                 }
             }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
+            catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
-    }
 
-    public void drawAllItems(final int sectionId)
-    {
-        currentSection = sectionId;
-        fragmentStatus = "section";
-        layout.removeAllViews();
-        buttonBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                drawAllSections(currentCollection);
-            }
-        });
-        layout.addView(buttonBack);
-        scrollView.scrollTo(0, 0);
-
-        Cursor cursorCurrentSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_SECTION_NAME}, DbHandler.KEY_SECTION_ID + " = " + sectionId, null, null, null, null);
-        if(cursorCurrentSection.moveToFirst())
-            actionBar.setTitle(cursorCurrentSection.getString(cursorCurrentSection.getColumnIndex(DbHandler.KEY_SECTION_NAME)));
-        cursorCurrentSection.close();
-
-        String columns[] = new String[]{DbHandler.KEY_ITEM_ID, DbHandler.KEY_ITEM_SECTION_ID, DbHandler.KEY_ITEM_NAME, DbHandler.KEY_ITEM_IMAGE_PATH};
-        String selection =  DbHandler.KEY_ITEM_SECTION_ID + " = " + sectionId;
-
-        Cursor cursorItemInSection = mDb.query(DbHandler.TABLE_ITEMS, columns, selection, null, null, null, null);
-
-        int pathIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH);
-        int nameIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_NAME);
-        int itemIdIndex = cursorItemInSection.getColumnIndex(DbHandler.KEY_ITEM_ID);
-
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            if (cursorItemInSection.moveToFirst()) {
-                do {
-                    final int currentItemId = cursorItemInSection.getInt(itemIdIndex);
-                    pathToImage = cursorItemInSection.getString(pathIndex);
-
-                    ImageView currentImageView = new ImageView(context);
-                    currentImageView.setBackground(gradientDrawable);
-                    currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                    currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                    tempId = View.generateViewId();
-                    currentImageView.setId(tempId);
-                    currentImageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            CurrentItemFragment currentItemFragment = new CurrentItemFragment();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("id", currentItemId);
-                            bundle.putInt("sectionId", sectionId);
-                            bundle.putString("type", fragmentType);
-                            currentItemFragment.setArguments(bundle);
-                            FragmentManager fragmentManager = getFragmentManager();
-                            fragmentManager.beginTransaction().replace(R.id.content_frame, currentItemFragment).commit();
-                        }
-                    });
-
-                    Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                    DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                    downloadScaledImage.execute(offer);
-
-                    layout.addView(currentImageView, currentId++);
-                    layout.addView(getTextViewBySide(cursorItemInSection.getString(nameIndex), countImages), currentId++);
-                    countImages++;
-                } while (cursorItemInSection.moveToNext());
-                cursorItemInSection.close();
-            }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            super.onProgressUpdate(values);
+            AsyncCurrentItem currentItem = new AsyncCurrentItem((int)values[0], (int)values[1], (int)values[2], (String)values[3], "collection");
+            offers.add(currentItem);
+            currentItem.execute();
         }
-    }
 
-    public void drawAllSections(int collectionId)
-    {
-        currentCollection = collectionId;
-        fragmentStatus = "collection";
-        layout.removeAllViews();
-        buttonBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                drawAllCollections();
-            }
-        });
-        layout.addView(buttonBack);
-        scrollView.scrollTo(0, 0);
-
-        Cursor cursorCurrentCollection = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_COLLECTION_NAME}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
-        if(cursorCurrentCollection.moveToFirst())
-            actionBar.setTitle(cursorCurrentCollection.getString(cursorCurrentCollection.getColumnIndex(DbHandler.KEY_COLLECTION_NAME)));
-        cursorCurrentCollection.close();
-
-
-        String selection =  DbHandler.KEY_SECTION_COLLECTION_ID + " = " + collectionId;
-        String columns[] = new String[]{DbHandler.KEY_SECTION_ID, DbHandler.KEY_SECTION_NAME, DbHandler.KEY_SECTION_COLLECTION_ID};
-        Cursor cursorUserSections = mDb.query(DbHandler.TABLE_SECTIONS, columns, selection, null, null, null, null);
-
-        List<Integer> listSectionsIds = new ArrayList<Integer>();
-        int nameIndex = cursorUserSections.getColumnIndex(DbHandler.KEY_SECTION_NAME);
-        int idSectionIndex = cursorUserSections.getColumnIndex(DbHandler.KEY_SECTION_ID);
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            if (cursorUserSections.moveToFirst()) {
-                do {
-                    final int currentSectionId = cursorUserSections.getInt(idSectionIndex);
-                    if(!listSectionsIds.contains(currentSectionId)) {
-                        pathToImage = "";
-                        Cursor cursorUserItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_IMAGE_PATH}, DbHandler.KEY_ITEM_SECTION_ID + " = " + currentSectionId, null, null, null, null);
-                        if(cursorUserItems.moveToFirst()) {
-                            pathToImage = cursorUserItems.getString(cursorUserItems.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH));
-                        }
-                        cursorUserItems.close();
-
-                        ImageView currentImageView = new ImageView(context);
-                        currentImageView.setBackground(gradientDrawable);
-                        currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                        currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                        currentImageView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                drawAllItems(currentSectionId);
-                            }
-                        });
-
-                        tempId = View.generateViewId();
-                        currentImageView.setId(tempId);
-
-                        Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                        DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                        downloadScaledImage.execute(offer);
-
-                        layout.addView(currentImageView, currentId++);
-                        layout.addView(getTextViewBySide(cursorUserSections.getString(nameIndex), countImages), currentId++);
-                        countImages++;
-                    }
-                } while (cursorUserSections.moveToNext());
-                cursorUserSections.close();
-            }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
-        }
-    }
-
-    public void drawAllCollections()
-    {
-        fragmentStatus = "all";
-        layout.removeAllViews();
-        scrollView.scrollTo(0, 0);
-        actionBar.setTitle("Коллекции сообщества");
-
-
-        Cursor cursorCollections = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_COLLECTION_NAME, DbHandler.KEY_COLLECTION_ID}, null, null, null, null, null, null);
-
-        lastLeftId = -1;
-        lastRightId = -1;
-        int countImages = 0;
-        int currentId = 0;
-        int idCollectionsIndex = cursorCollections.getColumnIndex(DbHandler.KEY_COLLECTION_ID);
-        if (EasyPermissions.hasPermissions(context, galleryPermissions)) {
-            if (cursorCollections.moveToFirst()) {
-                do {
-                    final int currentCollId = cursorCollections.getInt(idCollectionsIndex);
-
-                    pathToImage = "";
-                    Cursor tempSectionsCursor = mDb.query(DbHandler.TABLE_SECTIONS, null, DbHandler.KEY_SECTION_COLLECTION_ID + " = " + currentCollId, null, null, null, null);
-                    if(tempSectionsCursor.moveToFirst()) {
-                        int tempSectionId = tempSectionsCursor.getInt(tempSectionsCursor.getColumnIndex(DbHandler.KEY_SECTION_ID));
-                        Cursor tempItemsCursor = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ITEM_SECTION_ID + " = " + tempSectionId, null, null, null, null);
-                        if (tempItemsCursor.moveToFirst()) {
-                            pathToImage = tempItemsCursor.getString(tempItemsCursor.getColumnIndex(DbHandler.KEY_ITEM_IMAGE_PATH));
-                        }
-                        tempItemsCursor.close();
-                    }
-                    tempSectionsCursor.close();
-
-                    ImageView currentImageView = new ImageView(context);
-                    currentImageView.setBackground(gradientDrawable);
-                    currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-                    currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-                    currentImageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            drawAllSections(currentCollId);
-                        }
-                    });
-
-                    tempId = View.generateViewId();
-                    currentImageView.setId(tempId);
-
-                    Object offer[] = {pathToImage, currentImageView, context, pictureSize};
-                    DownloadScaledImage downloadScaledImage = new DownloadScaledImage();
-                    downloadScaledImage.execute(offer);
-
-                    layout.addView(currentImageView, currentId++);
-                    layout.addView(getTextViewBySide(cursorCollections.getString(cursorCollections.getColumnIndex(DbHandler.KEY_COLLECTION_NAME)), countImages), currentId++);
-                    countImages++;
-                } while (cursorCollections.moveToNext());
-                cursorCollections.close();
-            }
-        } else {
-            EasyPermissions.requestPermissions(this, "Access for storage",
-                    101, galleryPermissions);
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if(fragmentType.equals("comCollections")) actionBar.setTitle("Коллекции сообщества");
+            else
+            if(fragmentType.equals("myCollections")) actionBar.setTitle("Мои коллекции");
         }
     }
 
@@ -748,6 +888,7 @@ public class CollectionsFragment extends Fragment {
 
         outState.putString("status", fragmentStatus);
         outState.putString("type", fragmentType);
+        outState.putString("title", currentTitle);
         if (fragmentStatus.equals("collection"))
             outState.putInt("id", currentCollection);
         else if (fragmentStatus.equals("section"))

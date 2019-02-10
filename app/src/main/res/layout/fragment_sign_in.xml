@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relative_layout_sign_in"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.lobotino.collector.NavigationActivity">
+
+    <EditText
+        android:id="@+id/etLogin"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:ems="10"
+        android:hint="@string/login"
+        android:inputType="text"
+        android:textAlignment="viewStart" />
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/etLogin"
+            android:layout_alignEnd="@+id/etLogin"
+            android:layout_below="@+id/etLogin"
+            android:ems="10"
+            android:hint="@string/password"
+            android:inputType="textPassword" />
+
+        <EditText
+            android:id="@+id/etConfirmPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/etPassword"
+            android:layout_alignEnd="@+id/etLogin"
+            android:layout_below="@+id/etPassword"
+            android:ems="10"
+            android:hint="@string/confirm_password"
+            android:inputType="textPassword" />
+
+    <Button
+        android:id="@+id/btnRegisterConfirm"
+        android:text="РЕГИСТРАЦИЯ"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        style="@style/AppTheme.ButtonReg"
+        android:layout_width="200dp"
+        android:layout_height="45dp"
+        android:layout_below="@+id/etConfirmPassword"
+        android:layout_marginTop="15dp"
+        android:layout_centerHorizontal="true"/>
+
+
+    <TextView
+            android:id="@+id/tvRegisterStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/btnRegisterConfirm"
+            android:layout_alignTop="@+id/btnRegisterConfirm" />
+
+
+</RelativeLayout>

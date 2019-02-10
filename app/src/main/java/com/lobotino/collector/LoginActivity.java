@@ -74,14 +74,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         passwordHash.append(s);
                     }
 
-                    Cursor cursor = database.query(DbHandler.TABLE_USERS, null, DbHandler.KEY_LOGIN + " = '" + login + "'", null, null, null, null);
+                   /* Cursor cursor = database.query(DbHandler.TABLE_USERS, null, DbHandler.KEY_LOGIN + " = '" + login + "'", null, null, null, null);
 
                     if(cursor.moveToFirst() && cursor.getCount() >= 1) {
                         String dbPass = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_PASSWORD_HASH));
 
                         if (passwordHash.toString().equals(dbPass)) flagLogin = true;
                     }
-
+*/
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }

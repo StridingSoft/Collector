@@ -43,4 +43,11 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="tv_login">Логин</string>
+    <string name="Регистрация" />
+    <string name="Register">Регистрация</string>
+    <string name="register_name">Регистрация</string>
+    <string name="reg">Регистрация</string>
+    <string name="action_clear_cash">Очистить кэш</string>
+    <string name="action_log_items">Вывести в лог все предметы</string>
 </resources>

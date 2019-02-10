@@ -11,5 +11,11 @@
             android:icon="@drawable/ic_menu_slideshow"
             android:title="@string/CommunityColl" />
     </group>
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_registration"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="@string/register_name" />
+    </group>
 
 </menu>
