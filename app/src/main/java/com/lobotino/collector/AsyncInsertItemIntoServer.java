@@ -10,14 +10,12 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class MDBInsertImage extends AsyncTask<Bitmap, Void, Void> {
+public class AsyncInsertItemIntoServer extends AsyncTask<Bitmap, Void, Void> {
 
-    private String SQL = "INSERT into Items VALUES(?,?,?,?,?,?,?)";
+    private int id, secId;
+    private String name, description, date;
 
-    int id, secId;
-    String name, description, date;
-
-    public MDBInsertImage(int id, int secId, String name, String description, String date) {
+    public AsyncInsertItemIntoServer(int id, int secId, String name, String description, String date) {
         this.id = id;
         this.secId = secId;
         this.name = name;
@@ -25,7 +23,7 @@ public class MDBInsertImage extends AsyncTask<Bitmap, Void, Void> {
         this.description = description;
     }
 
-    long imgNormalSize, imgMiniSize;
+    private long imgNormalSize, imgMiniSize;
 
     @Override
     protected Void doInBackground(Bitmap... bitmaps) {
@@ -36,6 +34,7 @@ public class MDBInsertImage extends AsyncTask<Bitmap, Void, Void> {
             try {
                 con = DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS);
                 if (con != null) {
+                    String SQL = "INSERT into Items VALUES(?,?,?,?,?,?,?)";
                     prepared = con.prepareStatement(SQL);
 
 

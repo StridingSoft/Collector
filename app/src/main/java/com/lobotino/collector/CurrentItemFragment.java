@@ -60,7 +60,7 @@ public class CurrentItemFragment extends Fragment {
     private ImageButton buttonTrade, buttonSell, buttonHaveIt;
     private TextView tvDescriptionTitle, tvDescription;
     private Connection connection;
-
+    private boolean inMyCollection = false;
     public int getItemId(){
         return itemId;
     }
@@ -175,7 +175,19 @@ public class CurrentItemFragment extends Fragment {
             buttonSell.setLayoutParams(buttonParams);
 
             buttonHaveIt = new ImageButton(context);
-            img = context.getDrawable(R.drawable.i_have_it_button);
+
+            Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+
+            if(cursor.moveToFirst())
+            {
+                if(cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals("in"))
+                {
+                    inMyCollection = true;
+                }
+            }
+            cursor.close();
+
+            img = context.getDrawable(inMyCollection ? R.drawable.ic_in_my_collection : R.drawable.i_have_it_button);
             buttonHaveIt.setImageDrawable(img);
             buttonHaveIt.setBackground(buttonBackground);
             buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
@@ -183,6 +195,34 @@ public class CurrentItemFragment extends Fragment {
             buttonParams.addRule(RelativeLayout.ALIGN_END, buttonTradeId);
             buttonParams.setMargins(0, buttonMargin, buttonMargin + buttonSize, 0);
             buttonHaveIt.setLayoutParams(buttonParams);
+            buttonHaveIt.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                    if(cursor.moveToFirst())
+                    {
+                        String newStatus;
+                      //  ContentValues contentValues = new ContentValues();
+                        if(cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals("in")) {
+                            newStatus = "missing";
+                            inMyCollection = false;
+                        }
+                        else {
+                            newStatus = "in";
+                            inMyCollection = true;
+                        }
+                       // contentValues.put(DbHandler.KEY_ITEM_STATUS, newStatus);
+                       // mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
+
+                            AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
+                            asyncSetItemStatus.execute(newStatus);
+                        cursor.close();
+
+                        buttonHaveIt.setImageResource(inMyCollection ? R.drawable.ic_in_my_collection : R.drawable.i_have_it_button);
+                    }
+                    cursor.close();
+                }
+            });
 
             int descMargin = screenHeight > screenWight ? screenWight /11 : screenHeight /11;
 

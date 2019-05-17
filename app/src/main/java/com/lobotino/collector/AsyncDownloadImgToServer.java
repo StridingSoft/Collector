@@ -94,7 +94,7 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
         super.onPostExecute(bitmaps);
         if(bitmaps.length == 2) {
             try {
-                MDBInsertImage mdbInsertImage = new MDBInsertImage(id, secId, name, desc, date);
+                AsyncInsertItemIntoServer mdbInsertImage = new AsyncInsertItemIntoServer(id, secId, name, desc, date);
                 mdbInsertImage.execute(bitmaps);
             } catch (Exception e) {
                 e.printStackTrace();

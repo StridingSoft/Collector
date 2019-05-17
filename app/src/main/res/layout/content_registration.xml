@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relative_layout_sign_in"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/colorBackground"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.lobotino.collector.RegistrationActivity">
+
+    <EditText
+        android:id="@+id/etLogin"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/login"
+        android:inputType="text"
+        android:textAlignment="viewStart"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@id/etLogin"
+        android:layout_alignEnd="@+id/etLogin"
+        android:layout_below="@+id/etLogin"
+        android:ems="10"
+        android:hint="@string/email"
+        android:inputType="textEmailAddress"
+        android:textAlignment="viewStart" />
+
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        android:layout_below="@+id/etEmail"
+        android:layout_alignStart="@id/etLogin"
+        android:layout_alignEnd="@+id/etLogin"/>
+
+        <EditText
+            android:id="@+id/etConfirmPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/etPassword"
+            android:layout_alignEnd="@+id/etPassword"
+            android:layout_below="@+id/etPassword"
+            android:ems="10"
+            android:hint="@string/confirm_password"
+            android:inputType="textPassword" />
+
+    <TextView
+        android:id="@+id/tvRegisterStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/etConfirmPassword"
+        android:layout_below="@+id/etConfirmPassword"
+        android:layout_marginLeft="4dp"
+        android:layout_marginTop="3dp"
+        style = "@style/AppTheme.LoginTextStyle"
+        />
+
+    <Button
+        android:id="@+id/btnGoToLogin"
+        style="@style/AppTheme.ButtonReg"
+        android:layout_width="100dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="6dp"
+        android:text="@string/Login"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:layout_below="@+id/etConfirmPassword"
+        android:layout_alignEnd="@+id/etLogin"
+         />
+
+    <Button
+        android:id="@+id/btnRegisterConfirm"
+        style="@style/AppTheme.ButtonReg"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+
+        android:layout_marginEnd="110dp"
+        android:text="@string/Registr"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:layout_alignTop="@+id/btnGoToLogin"
+        android:layout_alignEnd="@+id/btnGoToLogin"/>
+
+</RelativeLayout>

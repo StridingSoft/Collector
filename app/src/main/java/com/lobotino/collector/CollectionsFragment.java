@@ -17,7 +17,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,11 +26,6 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -45,7 +39,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -57,7 +50,7 @@ public class CollectionsFragment extends Fragment {
     private View rootView;
     private Context context;
     private int pictureSize, screenWidth, externalMargins, topMargin, botMargin, puddingsSize, firstTopMargin, lastLeftId, lastRightId, tempId;
-    private GradientDrawable gradientDrawable;
+    private GradientDrawable gradientRedDrawable, gradientGreenDrawable;
     private RelativeLayout layout;
     private ScrollView scrollView;
     private Button buttonBack;
@@ -65,9 +58,9 @@ public class CollectionsFragment extends Fragment {
     private String pathToImage;
     private int countImages = 0;
     private int currentId = 0;
-    private String currentTitle = "";
+    private String collectionTitle = "", sectionTitle = "";
     private List<AsyncCurrentItem> offers;
-
+    private int checkImageSize;
     private String fragmentType = "myCollections";  //myCollections or comCollections
     private String fragmentStatus = "all";
 
@@ -90,7 +83,6 @@ public class CollectionsFragment extends Fragment {
         return fragmentStatus;
     }
 
-    public String getCurrentTitle() { return currentTitle; }
 
     @Nullable
     @Override
@@ -103,6 +95,7 @@ public class CollectionsFragment extends Fragment {
         dbHandler = NavigationActivity.dbHandler;
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         pictureSize = Math.round((float) (screenWidth / 3));
+        checkImageSize = pictureSize*6/7;
         layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
         scrollView = (ScrollView) rootView.findViewById(R.id.scroll_view_id_1);
         actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
@@ -119,10 +112,13 @@ public class CollectionsFragment extends Fragment {
         puddingsSize = pictureSize / 30; //15
         firstTopMargin = screenWidth / 16;
 
-        gradientDrawable = new GradientDrawable();
-        gradientDrawable.setCornerRadius(15);
-        //gradientDrawable.setColor(Color.parseColor("#180c28"));
-        gradientDrawable.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+        gradientRedDrawable = new GradientDrawable();
+        gradientRedDrawable.setCornerRadius(15);
+        gradientRedDrawable.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+
+        gradientGreenDrawable = new GradientDrawable();
+        gradientGreenDrawable.setCornerRadius(15);
+        gradientGreenDrawable.setColors(new int[]{Color.parseColor("#009910"), Color.parseColor("#00820E")});
 
 
         buttonBack = new Button(context);
@@ -143,12 +139,14 @@ public class CollectionsFragment extends Fragment {
             type = savedInstanceState.getString("type");
             status = savedInstanceState.getString("status");
             id = savedInstanceState.getInt("id");
-            currentTitle = savedInstanceState.getString("title");
+            sectionTitle = savedInstanceState.getString("sectionTitle");
+            collectionTitle = savedInstanceState.getString("collectionTitle");
         }else {
             type = getArguments().getString("type");
             status = getArguments().getString("status");
             id = getArguments().getInt("id");
-            currentTitle = getArguments().getString("title");
+            sectionTitle = getArguments().getString("sectionTitle");
+            collectionTitle = getArguments().getString("collectionTitle");
         }
 
         if (!EasyPermissions.hasPermissions(context, galleryPermissions)) {
@@ -207,33 +205,24 @@ public class CollectionsFragment extends Fragment {
         offers.clear();
     }
 
-    public void closeConnection()
-    {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void printAllCollections(){
         new AsyncDrawAllCollections().execute();
     }
 
     public void printAllSections(){
-        new AsyncDrawAllSections(currentCollection, currentTitle).execute();
+        new AsyncDrawAllSections(currentCollection, collectionTitle).execute();
     }
 
     public void printAllSections(int colId){
-        new AsyncDrawAllSections(colId, currentTitle).execute();
+        new AsyncDrawAllSections(colId, collectionTitle).execute();
     }
 
     public void printAllItems(){
-        new AsyncDrawAllItems(currentSection, currentTitle).execute();
+        new AsyncDrawAllItems(currentSection, sectionTitle).execute();
     }
 
     public void printAllItems(int secId){
-        new AsyncDrawAllItems(secId, currentTitle).execute();
+        new AsyncDrawAllItems(secId, sectionTitle).execute();
     }
 
     private TextView getTextViewBySide(String text, int countImages)
@@ -287,12 +276,13 @@ public class CollectionsFragment extends Fragment {
         return imageParams;
     }
 
-    private class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap>
+
+    public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap>
     {
         private String SQL;
         private String name, desc, status;
         private int collectionId, secId, itemId;
-
+        private boolean inMyCollection = false;
 
         public AsyncCurrentItem(int itemId, int secId, String status) {
             this.itemId = itemId;
@@ -315,7 +305,6 @@ public class CollectionsFragment extends Fragment {
             this.secId = secId;
         }
 
-
         private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
             final int height = options.outHeight;
             final int width = options.outWidth;
@@ -329,32 +318,135 @@ public class CollectionsFragment extends Fragment {
             return inSampleSize - 1;
         }
 
-
         @Override
         protected Bitmap doInBackground(String... query) {
             try {
-
                 Class.forName("net.sourceforge.jtds.jdbc.Driver");
                 Statement st = null;
                 ResultSet rs = null;
                 try {
+                    if(DbHandler.isOnline(context)) {
+                        if(DbHandler.needToReconnect)
+                            connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                        else
+                            connection = DbHandler.getConnection();
+                    }
+
                     Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
                     int count = cursor.getCount();
                     byte[] blob = null;
+                    String dateOfChangeClient = "";
                     if (count > 0) {
                         if (cursor.moveToFirst()) {
                             blob = cursor.getBlob(cursor.getColumnIndex(DbHandler.KEY_MINI_IMAGE));
-                            if (status.equals("item"))
+                            if (status.equals("item")) {
                                 name = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_NAME));
+                            }
+                        }
+                        if(connection != null)
+                        {
+                            SQL = "SELECT " + DbHandler.KEY_DATE_OF_CHANGE + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
+                            st = connection.createStatement();
+                            rs = st.executeQuery(SQL);
+
+                            if (rs != null && !isCancelled()) {
+                                rs.next();
+                                String dateOfChangeServer = rs.getString(1);
+                                DateFormat orig = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
+                                Date dateClient, dateServer;
+                                try {
+                                    dateOfChangeClient = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_DATE_OF_CHANGE));
+                                    dateClient = orig.parse(dateOfChangeClient);
+                                    dateServer = orig.parse(dateOfChangeServer);
+                                    if (dateServer.after(dateClient)) {
+                                        SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
+                                        Statement st1 = connection.createStatement();
+                                        ResultSet rs1 = st1.executeQuery(SQL);
+
+                                        if (rs1 != null && !isCancelled()) {
+                                            rs1.next();
+                                            int id = rs1.getInt(1);
+                                            String tname = rs1.getString(2);
+                                            if (status.equals("item")) name = tname;
+                                            String desc = rs1.getString(3);
+                                            blob = rs1.getBytes(6);
+                                            String serverDateStr = rs1.getString(7);
+
+                                            ContentValues contentValues = new ContentValues();
+                                            contentValues.put(DbHandler.KEY_ID, id);
+                                            contentValues.put(DbHandler.KEY_SECTION_ID, secId);
+                                            contentValues.put(DbHandler.KEY_NAME, tname);
+                                            contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
+                                            contentValues.put(DbHandler.KEY_MINI_IMAGE, blob);
+                                            contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, serverDateStr);
+
+                                            SQL = "SELECT * FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE " + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID + " AND " + DbHandler.KEY_ITEM_ID + " = " + id;
+                                            Statement st2 = connection.createStatement();
+                                            ResultSet rs2 = st2.executeQuery(SQL);
+                                            String itemStatus;
+                                            if (rs2 != null && rs2.next())
+                                                itemStatus = "in";
+                                            else
+                                                itemStatus = "missing";
+                                            st2.close();
+                                            rs2.close();
+
+                                            contentValues.put(DbHandler.KEY_ITEM_STATUS, itemStatus);
+
+                                            mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + id, null);
+
+                                            rs1.close();
+                                            st1.close();
+                                        }
+                                    }
+                                }
+                                catch (ParseException e) {
+                                    SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
+                                    Statement st1 = connection.createStatement();
+                                    ResultSet rs1 = st1.executeQuery(SQL);
+
+                                    if (rs1 != null && !isCancelled()) {
+                                        rs1.next();
+                                        int id = rs1.getInt(1);
+                                        String tname = rs1.getString(2);
+                                        if (status.equals("item")) name = tname;
+                                        String desc = rs1.getString(3);
+                                        blob = rs1.getBytes(6);
+                                        String serverDateStr = rs1.getString(7);
+
+                                        ContentValues contentValues = new ContentValues();
+                                        contentValues.put(DbHandler.KEY_ID, id);
+                                        contentValues.put(DbHandler.KEY_SECTION_ID, secId);
+                                        contentValues.put(DbHandler.KEY_NAME, tname);
+                                        contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
+                                        contentValues.put(DbHandler.KEY_MINI_IMAGE, blob);
+
+                                        contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, serverDateStr);
+
+                                        SQL = "SELECT * FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE " + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID + " AND " + DbHandler.KEY_ITEM_ID + " = " + id;
+                                        Statement st2 = connection.createStatement();
+                                        ResultSet rs2 = st2.executeQuery(SQL);
+                                        String itemStatus;
+                                        if (rs2 != null && rs2.next())
+                                            itemStatus = "in";
+                                        else
+                                            itemStatus = "missing";
+                                        st2.close();
+                                        rs2.close();
+
+                                        contentValues.put(DbHandler.KEY_ITEM_STATUS, itemStatus);
+
+                                        mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + id, null);
+
+                                        rs1.close();
+                                        st1.close();
+                                    }
+                                }
+                            }
+                            rs.close();
+                            st.close();
                         }
                     } else {
-                        if(DbHandler.isOnline(context)) {
-                            if(DbHandler.needToReconnect)
-                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                            else
-                                connection = DbHandler.getConnection();
-                        }
-
                         if (connection != null) {
                             SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
                             st = connection.createStatement();
@@ -365,7 +457,6 @@ public class CollectionsFragment extends Fragment {
                                 int id = rs.getInt(1);
                                 String tname = rs.getString(2);
                                 if (status.equals("item")) name = tname;
-
                                 String desc = rs.getString(3);
                                 blob = rs.getBytes(6);
                                 String serverDateStr = rs.getString(7);
@@ -398,12 +489,11 @@ public class CollectionsFragment extends Fragment {
                     o.inSampleSize = size;
                     o.inPreferredConfig = Bitmap.Config.RGB_565;
 
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(blob, 0, blob.length, o);
-
-                    return bitmap;
+                    return BitmapFactory.decodeByteArray(blob, 0, blob.length, o);
                 } catch (SQLException e) {
                     e.printStackTrace();
-                }  finally {
+                }
+                finally {
                     try {
                         if (rs != null) rs.close();
                         if (st != null) st.close();
@@ -423,10 +513,10 @@ public class CollectionsFragment extends Fragment {
             super.onPostExecute(bitmap);
             if (bitmap != null) {
 
-                ImageView currentImageView = new ImageView(context);
+                final ImageView currentImageView = new ImageView(context);
 
                 currentImageView.setImageBitmap(bitmap);
-                currentImageView.setBackground(gradientDrawable);
+                currentImageView.setBackground(gradientRedDrawable);
                 currentImageView.setLayoutParams(getImageParamsBySide(countImages));
                 currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
                 tempId = View.generateViewId();
@@ -443,29 +533,78 @@ public class CollectionsFragment extends Fragment {
                                 bundle.putInt("itemId", itemId);
                                 bundle.putInt("sectionId", secId);
                                 bundle.putString("type", fragmentType);
-                                bundle.putString("title", currentTitle);
+                                bundle.putString("collectionTitle", collectionTitle);
+                                bundle.putString("sectionTitle", sectionTitle);
                                 currentItemFragment.setArguments(bundle);
                                 FragmentManager fragmentManager = getFragmentManager();
                                 fragmentManager.beginTransaction().replace(R.id.content_frame, currentItemFragment).commit();
                                 break;
                             }
                             case "section": {
-                                AsyncDrawAllItems drawAllItems = new AsyncDrawAllItems(secId, name);
+                                CollectionsFragment.AsyncDrawAllItems drawAllItems = new CollectionsFragment.AsyncDrawAllItems(secId, name);
                                 drawAllItems.execute();
                                 break;
                             }
                             case "collection": {
-                                AsyncDrawAllSections drawAllSections = new AsyncDrawAllSections(collectionId, name);
+                                CollectionsFragment.AsyncDrawAllSections drawAllSections = new CollectionsFragment.AsyncDrawAllSections(collectionId, name);
                                 drawAllSections.execute();
                                 break;
                             }
                         }
                     }
                 });
+
+                if(status.equals("item"))
+                {
+                    currentImageView.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View view) {
+                            Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                            if(cursor.moveToFirst())
+                            {
+                                String currentStatus = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS));
+                                String setStatus = currentStatus.equals("in") ? "missing" : "in";
+                                inMyCollection = setStatus.equals("in");
+                                AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
+                                asyncSetItemStatus.execute(setStatus);
+                                setInMyCollection(currentImageView);
+                            }
+                            cursor.close();
+                            return false;
+                        }
+                    });
+
+                    if(fragmentType.equals("comCollections")) {
+                        Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                        if (cursor.moveToFirst()) {
+                            String currentStatus = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS));
+                            if (currentStatus.equals("in"))
+                                setInMyCollection(currentImageView);
+                        }
+                        cursor.close();
+                    }
+                }
+
+                if(inMyCollection) setInMyCollection(currentImageView);
+
                 layout.addView(currentImageView, currentId++);
                 layout.addView(getTextViewBySide(name, countImages), currentId++);
                 countImages++;
             }
+        }
+
+        private void setInMyCollection(ImageView imageView){
+            ImageView accept = new ImageView(context);
+            RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(pictureSize/5, pictureSize/5);
+            imageParams.addRule(RelativeLayout.ALIGN_LEFT, imageView.getId());
+            imageParams.addRule(RelativeLayout.ALIGN_BOTTOM, imageView.getId());
+            imageParams.setMargins(checkImageSize, 0, 0, 0);
+            accept.setLayoutParams(imageParams);
+            if(fragmentType.equals("comCollections"))
+                accept.setImageResource(R.drawable.i_have_it_button);
+            else
+                accept.setImageResource(R.drawable.ic_delete_from_mycolls);
+            layout.addView(accept);
         }
     }
 
@@ -474,17 +613,16 @@ public class CollectionsFragment extends Fragment {
         private String SQL, sectionName;
         private int secId;
 
-        public AsyncDrawAllItems(int secId, String sectionName) {
+        private AsyncDrawAllItems(int secId, String sectionName) {
             this.secId = secId;
             this.sectionName = sectionName;
         }
-
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             actionBar.setTitle(sectionName);
-            currentTitle = sectionName;
+            sectionTitle = sectionName;
             fragmentStatus = "section";
             currentSection = secId;
             offers.clear();
@@ -506,33 +644,41 @@ public class CollectionsFragment extends Fragment {
                 Cursor cursorSection = null;
                 Cursor cursorItems = null;
                 try {
-                    if (!DbHandler.isOnline(context)) {
-                        cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                    if(fragmentType.equals("comCollections")) {
+                        if (!DbHandler.isOnline(context)) {
+                                cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                            if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
+                                do {
+                                    publishProgress(cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID)), secId);
+                                } while (cursorItems.moveToNext());
+                            }
+                            cursorItems.close();
+                        } else {
+                            if (DbHandler.needToReconnect)
+                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                            else
+                                connection = DbHandler.getConnection();
+
+                            if (connection != null) {
+                                SQL = "SELECT " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
+                                stItems = connection.createStatement();
+                                rsItems = stItems.executeQuery(SQL);
+
+                                if (rsItems != null) {
+                                    while (rsItems.next()) {
+                                        publishProgress(rsItems.getInt(1), secId);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = ? AND " + DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{secId + "", "in"}, null, null, null);
                         if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
                             do {
                                 publishProgress(cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID)), secId);
                             } while (cursorItems.moveToNext());
                         }
                         cursorItems.close();
-                    } else {
-                        if(DbHandler.isOnline(context)) {
-                            if(DbHandler.needToReconnect)
-                                connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                            else
-                                connection = DbHandler.getConnection();
-                        }
-
-                        if (connection != null) {
-                            SQL = "SELECT " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
-                            stItems = connection.createStatement();
-                            rsItems = stItems.executeQuery(SQL);
-
-                            if (rsItems != null) {
-                                while (rsItems.next()) {
-                                    publishProgress(rsItems.getInt(1), secId);
-                                }
-                            }
-                        }
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -580,7 +726,7 @@ public class CollectionsFragment extends Fragment {
         protected void onPreExecute() {
             super.onPreExecute();
             actionBar.setTitle(collectionName);
-            currentTitle = collectionName;
+            collectionTitle = collectionName;
             fragmentStatus = "collection";
             offers.clear();
             layout.removeAllViews();
@@ -599,22 +745,29 @@ public class CollectionsFragment extends Fragment {
                 ResultSet rsSections = null;
                 ResultSet rsItems = null;
                 try {
-                    if(!DbHandler.isOnline(context)) {
+                    if (fragmentType.equals("myCollections") || !DbHandler.isOnline(context)) {
                         Cursor cursorSections = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
                         if (cursorSections.getCount() > 0 && cursorSections.moveToFirst()) {
                             do {
                                 String name = cursorSections.getString(cursorSections.getColumnIndex(DbHandler.KEY_NAME));
                                 int secId = cursorSections.getInt(cursorSections.getColumnIndex(DbHandler.KEY_ID));
-                                Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                Cursor cursorItems;
+                                if(fragmentType.equals("comCollections"))
+                                    cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                else
+                                    cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = ? AND " + DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{secId + "", "in"}, null, null, null);
+
                                 if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
                                     int idItem = cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID));
-                                    publishProgress(new Object[]{idItem, secId, name});
+                                    publishProgress(idItem, secId, name);
                                 }
+                                cursorItems.close();
                             } while (cursorSections.moveToNext());
+                            cursorSections.close();
                         }
                     } else {
-                        if(DbHandler.isOnline(context)) {
-                            if(DbHandler.needToReconnect)
+                        if (DbHandler.isOnline(context)) {
+                            if (DbHandler.needToReconnect)
                                 connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
                             else
                                 connection = DbHandler.getConnection();
@@ -648,7 +801,7 @@ public class CollectionsFragment extends Fragment {
                                             if (rsItems != null) {
                                                 rsItems.next();
                                                 int itemId = rsItems.getInt(1);
-                                                publishProgress(new Object[]{itemId, secId, name});
+                                                publishProgress(itemId, secId, name);
                                             }
                                         } catch (SQLException e) {
                                             e.printStackTrace();
@@ -659,7 +812,7 @@ public class CollectionsFragment extends Fragment {
                                             Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
                                             if (cursorItems.moveToFirst()) {
                                                 int itemId = cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID));
-                                                publishProgress(new Object[]{itemId, secId, name});
+                                                publishProgress(itemId, secId, name);
                                             }
                                             cursorItems.close();
                                         }
@@ -669,9 +822,9 @@ public class CollectionsFragment extends Fragment {
                             }
                         }
                     }
-                }catch (SQLException e) {
+                } catch (SQLException e) {
                     e.printStackTrace();
-                }  finally {
+                } finally {
                     try {
                         if (rsSections != null) rsSections.close();
                         if (rsItems != null) rsItems.close();
@@ -697,7 +850,7 @@ public class CollectionsFragment extends Fragment {
         }
     }
 
-    public class AsyncDrawAllCollections extends AsyncTask<Void, Object, Void>
+    private class AsyncDrawAllCollections extends AsyncTask<Void, Object, Void>
     {
         String SQL;
 
@@ -725,7 +878,7 @@ public class CollectionsFragment extends Fragment {
                 ResultSet rsSections = null;
                 ResultSet rsItems = null;
                 try {
-                    if (!DbHandler.isOnline(context)) {
+                    if (fragmentType.equals("myCollections") || !DbHandler.isOnline(context)) {
                         Cursor cursorCollections = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_ID, DbHandler.KEY_NAME}, null, null, null, null, null);
                         if (cursorCollections.moveToFirst()) {
                             do {
@@ -733,20 +886,28 @@ public class CollectionsFragment extends Fragment {
                                 String name = cursorCollections.getString(cursorCollections.getColumnIndex(DbHandler.KEY_NAME));
                                 Cursor cursorSection = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_COLLECTION_ID + " = " + collectionId, null, null, null, null);
                                 if (cursorSection.moveToFirst()) {
-                                    int secId = cursorSection.getInt(cursorSection.getColumnIndex(DbHandler.KEY_ID));
-                                    Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
-                                    if (cursorItem.moveToFirst()) {
-                                        int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
-                                        publishProgress(new Object[]{itemId, secId, collectionId, name});
-                                    }
-                                    cursorItem.close();
+                                    do {
+                                        int secId = cursorSection.getInt(cursorSection.getColumnIndex(DbHandler.KEY_ID));
+
+                                        Cursor cursorItems;
+                                        if (fragmentType.equals("comCollections"))
+                                            cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
+                                        else
+                                            cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = ? AND " + DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{secId + "", "in"}, null, null, null);
+
+                                        if (cursorItems.moveToFirst()) {
+                                            int itemId = cursorItems.getInt(cursorItems.getColumnIndex(DbHandler.KEY_ID));
+                                            publishProgress(itemId, secId, collectionId, name);
+                                            break;
+                                        }
+                                        cursorItems.close();
+                                    }while(cursorSection.moveToNext());
                                 }
                                 cursorSection.close();
                             } while (cursorCollections.moveToNext());
                         }
                         cursorCollections.close();
                     } else {
-                        if (DbHandler.needToReconnect)
                             if(DbHandler.isOnline(context)) {
                                 if(DbHandler.needToReconnect)
                                     connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
@@ -802,7 +963,7 @@ public class CollectionsFragment extends Fragment {
                                                         if (rsItems != null) {
                                                             rsItems.next();
                                                             int itemId = rsItems.getInt(1);
-                                                            publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                            publishProgress(itemId, secId, collectionId, name);
                                                         }
                                                     }
                                                     catch (SQLException e) {
@@ -813,7 +974,7 @@ public class CollectionsFragment extends Fragment {
                                                         Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
                                                         if (cursorItem.moveToFirst()) {
                                                             int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
-                                                            publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                            publishProgress(itemId, secId, collectionId, name);
                                                         }
                                                         cursorItem.close();
                                                     }
@@ -832,7 +993,7 @@ public class CollectionsFragment extends Fragment {
                                                 Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_SECTION_ID + " = " + secId, null, null, null, null);
                                                 if (cursorItem.moveToFirst()) {
                                                     int itemId = cursorItem.getInt(cursorItem.getColumnIndex(DbHandler.KEY_ID));
-                                                    publishProgress(new Object[]{itemId, secId, collectionId, name});
+                                                    publishProgress(itemId, secId, collectionId, name);
                                                 }
                                                 cursorItem.close();
                                             }
@@ -888,7 +1049,8 @@ public class CollectionsFragment extends Fragment {
 
         outState.putString("status", fragmentStatus);
         outState.putString("type", fragmentType);
-        outState.putString("title", currentTitle);
+        outState.putString("sectionTitle", sectionTitle);
+        outState.putString("collectionTitle", collectionTitle);
         if (fragmentStatus.equals("collection"))
             outState.putInt("id", currentCollection);
         else if (fragmentStatus.equals("section"))

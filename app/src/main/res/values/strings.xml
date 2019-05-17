@@ -50,4 +50,10 @@
     <string name="reg">Регистрация</string>
     <string name="action_clear_cash">Очистить кэш</string>
     <string name="action_log_items">Вывести в лог все предметы</string>
+    <string name="email">Email</string>
+    <string name="Registraition">РЕГИСТРАЦИЯ</string>
+    <string name="Login">Вход</string>
+    <string name="action_go_out">Сменить пользователя</string>
+    <string name="title_activity_login1">LoginActivity1</string>
+    <string name="Registr">Регистрация</string>
 </resources>

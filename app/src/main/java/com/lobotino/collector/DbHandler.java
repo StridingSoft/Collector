@@ -2,13 +2,14 @@ package com.lobotino.collector;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Process;
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
@@ -18,33 +19,34 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.concurrent.ExecutionException;
-
-import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
-import static android.os.Process.THREAD_PRIORITY_MORE_FAVORABLE;
-import static android.os.Process.setThreadPriority;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 52;
+    public static final int DATABASE_VERSION = 55;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
-    public static int USER_ID = 0;
+    public static int USER_ID = -1;
+    public static String USER_LOGIN = "";
+    public static String USER_PASS = "";
 
-    public static final String SALT = "AF*$#d+_21xsM";
+    public static String SALT;
 
     public static final String TABLE_COLLECTIONS = "Collections";
     public static final String TABLE_SECTIONS = "Sections";
     public static final String TABLE_ITEMS = "Items";
-    public static final String TABLE_USER_ITEMS = "User_items";
+    public static final String TABLE_USERS_ITEMS = "Users_Items";
+    public static final String TABLE_USERS = "Users";
 
     public static final String KEY_ID = "Id";
+    public static final String KEY_USER_ID = "IdUser";
+    public static final String KEY_ITEM_ID = "IdItem";
     public static final String KEY_NAME = "Name";
     public static final String KEY_DESCRIPTION = "Description";
     public static final String KEY_SECTION_ID = "SectionId";
@@ -53,14 +55,21 @@ public class DbHandler extends SQLiteOpenHelper{
     public static final String KEY_MINI_IMAGE = "MiniImage";
     public static final String KEY_ITEM_STATUS = "Status";
     public static final String KEY_DATE_OF_CHANGE = "DateOfChange";
+    public static final String KEY_LOGIN = "Login";
+    public static final String KEY_USER_NAME = "UserName";
+    public static final String KEY_PASSWORD = "Password";
+    public static final String KEY_ROLE_ID = "RoleId";
+    public static final String KEY_REG_DATE = "RegDate";
+    public static final String KEY_EMAIL = "Email";
+    public static final String KEY_LAST_ACTIVITY_DAYE = "LastActivityDate";
 
     public static final String STATUS_IN = "in";
     public static final String STATUS_SELLING = "on sell";
     public static final String STATUS_TRADE = "on trade";
 
-    public final static String MSSQL_DB = "jdbc:jtds:sqlserver://wpl19.hosting.reg.ru:1433:/u0351346_Collectioner";
-    public final static String MSSQL_LOGIN = "u0351346_Collectioner";
-    public final static String MSSQL_PASS= "eXcl17&7";
+    public static String MSSQL_DB;
+    public static String MSSQL_LOGIN;
+    public static String MSSQL_PASS;
 
     public static boolean needToReconnect = true;
 
@@ -70,8 +79,29 @@ public class DbHandler extends SQLiteOpenHelper{
 
     private SQLiteDatabase mdb;
 
+    public static DbHandler instance;
+
+    public static DbHandler getInstance(Context context)
+    {
+        if(instance == null) return new DbHandler(context);
+        return instance;
+    }
+
     public DbHandler(Context context) {
         super(context, DB_NAME, null, DATABASE_VERSION);
+        MSSQL_DB = context.getString(R.string.database_db);
+        MSSQL_LOGIN = context.getString(R.string.database_login);
+        MSSQL_PASS = context.getString(R.string.database_pass);
+        SALT = context.getString(R.string.salt);
+
+        JSONHelper.CurrentUser currentUser = JSONHelper.importFromJSON(context);
+        if(currentUser != null)
+        {
+            USER_ID = currentUser.getId();
+            USER_LOGIN = currentUser.getLogin();
+            USER_PASS = currentUser.getPass();
+        }
+
         if (android.os.Build.VERSION.SDK_INT >= 17) {
             String path = context.getApplicationInfo().dataDir + "/databases/";
             DB_PATH = path;
@@ -106,7 +136,7 @@ public class DbHandler extends SQLiteOpenHelper{
         return connection;
     }
 
-    private class SetConnectionThread extends AsyncTask<Void, Void, Connection>
+    private class setConnectionThread extends AsyncTask<Void, Void, Connection>
     {
         @Override
         protected Connection doInBackground(Void... voids) {
@@ -140,6 +170,23 @@ public class DbHandler extends SQLiteOpenHelper{
         Log.d("mDb", "Cash clear succes");
     }
 
+    public void syncUserItems()
+    {
+        new AsyncSyncUserItems(this.getDataBase()).execute();
+    }
+
+    public void changeUser(Context context) //Нужна проверка на онлайн
+    {
+        String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + context.getString(R.string.user_info);
+        File f = context.getFileStreamPath(context.getString(R.string.user_info));
+        if (f.exists()) {
+            f.delete();
+        }
+
+        Intent intent = new Intent(context, LoginActivity.class);
+        context.startActivity(intent);
+    }
+
     public void logAllItems()
     {
         Cursor cursor = mdb.query(DbHandler.TABLE_ITEMS, null, null, null, null, null, null, null);
@@ -149,16 +196,22 @@ public class DbHandler extends SQLiteOpenHelper{
                 int id = cursor.getInt(cursor.getColumnIndex(KEY_ID));
                 int secId = cursor.getInt(cursor.getColumnIndex(KEY_SECTION_ID));
                 String name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
-
-                Log.d("Item:", "ID:" + id + ", " + "SecID:" + secId + ", " + "NAME:"+name);
+                String date = cursor.getString(cursor.getColumnIndex(KEY_DATE_OF_CHANGE));
+                Log.d("Item:", "ID:" + id + ", " + "SecID:" + secId + ", " + "NAME:"+name + ", " + "DATEOFCHANGE:" + date);
             }while(cursor.moveToNext());
         }
+        cursor.close();
     }
 
     private void clearTableOnServer(String table)
     {
         AsyncClearTable asyncClearTable = new AsyncClearTable();
         asyncClearTable.execute(table);
+    }
+
+    private void updateUserItems()
+    {
+        new AsyncUpdateUserItems().execute();
     }
 
     private void fillItemsOnServer()
@@ -183,6 +236,7 @@ public class DbHandler extends SQLiteOpenHelper{
                 cursorImages.moveToNext();
             }
         }
+        cursorImages.close();
     }
 
     private void fillSectiondOnServer(){
@@ -296,6 +350,65 @@ public class DbHandler extends SQLiteOpenHelper{
     public long insert(String table, String nullColumnHack, ContentValues values)
     {
         return mDataBase.insert(table,nullColumnHack, values);
+    }
+
+    private class AsyncSyncUserItems extends AsyncTask<Void, Void, Void>
+    {
+        private Connection connection;
+        private SQLiteDatabase mDb;
+
+        public AsyncSyncUserItems(SQLiteDatabase mDb) {
+            this.mDb = mDb;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            Statement st = null;
+            ResultSet rs = null;
+            try {
+                if (DbHandler.needToReconnect)
+                    connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                else
+                    connection = DbHandler.getConnection();
+
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(DbHandler.KEY_ITEM_STATUS, "missing");
+                mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{"in"});
+
+
+                String SQL = "SELECT " + DbHandler.KEY_ITEM_ID + " FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE "
+                        + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID;
+                st = connection.createStatement();
+                rs = st.executeQuery(SQL);
+                while(rs.next())
+                {
+                    int itemId = rs.getInt(1);
+                    contentValues = new ContentValues();
+                    contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                    mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
+                }
+                st.close();
+                rs.close();
+
+                //TO DO чтобы при нахождении нескачанного итема - качалось
+                //И при открытии моих коллекций при отчищенном кеше - качать качать
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                if (st != null) try {
+                    st.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+                if (rs != null) try {
+                    rs.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            return null;
+        }
     }
 
 }

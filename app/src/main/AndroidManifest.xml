@@ -19,14 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:windowSoftInputMode="adjustResize|stateAlwaysVisible"
-        >
-        <activity
-            android:name=".RegisterActivity"
-            android:label="Register" />
-        <activity
-            android:name=".LoginActivity"
-            android:label="Login" />
+        android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
         <activity
             android:name=".NavigationActivity"
             android:label="@string/title_activity_main2"
@@ -37,6 +30,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+        android:name=".LoginActivity"
+        android:label="@string/Login"
+        android:theme="@style/AppTheme.MyActionBar" />
+        <activity
+            android:name=".RegistrationActivity"
+            android:label="@string/Register"
+            android:theme="@style/AppTheme.MyActionBar" />
     </application>
 
 </manifest>

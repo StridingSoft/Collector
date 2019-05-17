@@ -1,110 +1,227 @@
 package com.lobotino.collector;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.concurrent.ExecutionException;
 
+public class LoginActivity extends AppCompatActivity{
 
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
+//    private View rootView;
+    private RelativeLayout layout;
+    private ActionBar actionBar;
+    private Context context;
+    private DbHandler dbHandler;
+    private SQLiteDatabase mDb;
+    private int screenWidth, screenHeight;
+    private EditText etLogin, etPassword;
+    private TextView loginStatus;
 
-    DbHandler dbHandler;
-    EditText etLogin, etPassword;
-    Button btnBack, btnConfirm;
-    TextView loginStatus;
-
+    @Nullable
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.content_login);
 
-        etLogin = (EditText) findViewById(R.id.etLoginLogin);
-        etPassword = (EditText) findViewById(R.id.etPasswordLogin);
+        layout = (RelativeLayout) findViewById(R.id.relative_layout_sign_in);
+        actionBar = getSupportActionBar();
+        actionBar.setTitle("Вход");
 
-        btnBack = (Button) findViewById(R.id.btnBackToMainFromLogin);
-        btnBack.setOnClickListener(this);
+        context = getBaseContext();
+        dbHandler = NavigationActivity.dbHandler;
+        screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+        screenHeight = context.getResources().getDisplayMetrics().heightPixels;
 
-        btnConfirm = (Button) findViewById(R.id.btnLoginConfirm);
-        btnConfirm.setOnClickListener(this);
+        loginStatus = (TextView)findViewById(R.id.tvLoginStatus);
+        etLogin = (EditText)findViewById(R.id.etLoginLogin);
+        etPassword = (EditText)findViewById(R.id.etLoginPassword);
 
-        loginStatus = (TextView) findViewById(R.id.tvLoginStatus);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(4 * screenWidth / 5, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int margins = screenWidth / 10;
+        params.setMargins(margins, screenHeight / 8, margins, 0);
+        params.addRule(RelativeLayout.ALIGN_PARENT_START);
+        etLogin.setLayoutParams(params);
+        int white = Color.parseColor("#ffffff");
+        etLogin.setTextColor(white);
+        etLogin.setHintTextColor(white);
+        etLogin.getBackground().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
+        etPassword.setTextColor(white);
+        etPassword.setHintTextColor(white);
+        etPassword.getBackground().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
+        loginStatus.setTextColor(white);
+        loginStatus.setTypeface(Typeface.DEFAULT_BOLD);
 
-       // dbHandler = MainActivity.dbHandler;
+        try {
+            dbHandler.updateDataBase();
+        } catch (IOException mIOException) {
+            throw new Error("UnableToUpdateDatabase");
+        }
+        try {
+            mDb = dbHandler.getWritableDatabase();
+        } catch (SQLException mSQLException) {
+            throw mSQLException;
+        }
 
+        Button loginButton = (Button)findViewById(R.id.btnGoToLogin);
+        loginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                login();
+            }
+        });
+
+        Button regButton = (Button)findViewById(R.id.buttonGoToReg);
+        regButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                goToRegistration();
+            }
+        });
     }
 
 
-    @Override
-    public void onClick(View v) {
+    private void login() {
+        String login = etLogin.getText().toString();
+        String password = etPassword.getText().toString();
 
-        switch (v.getId()) {
+        if (login.equals("")) {
+            loginStatus.setText("Введите логин");
+            etPassword.setText("");
+            return;
+        }
+        if (password.equals("")) {
+            loginStatus.setText("Введите пароль");
+            return;
+        }
 
-            case R.id.btnLoginConfirm: {
-
-                String login = etLogin.getText().toString();
-                String password = etPassword.getText().toString();
-
-                SQLiteDatabase database = dbHandler.getReadableDatabase();
-
-
-
-                boolean flagLogin = false;
-
-
-                try {
-                    String SaltPassword = password + DbHandler.SALT;
-                    byte[] dataBytes = SaltPassword.getBytes();
-                    MessageDigest md = MessageDigest.getInstance("MD5");
-                    md.update(dataBytes);
-
-                    byte[] mdbytes = md.digest();
-
-                    StringBuffer passwordHash = new StringBuffer();
-                    for (int j = 0; j < mdbytes.length; j++) {
-                        String s = Integer.toHexString(0xff & mdbytes[j]);
-                        s = (s.length() == 1) ? "0" + s : s;
-                        passwordHash.append(s);
-                    }
-
-                   /* Cursor cursor = database.query(DbHandler.TABLE_USERS, null, DbHandler.KEY_LOGIN + " = '" + login + "'", null, null, null, null);
-
-                    if(cursor.moveToFirst() && cursor.getCount() >= 1) {
-                        String dbPass = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_PASSWORD_HASH));
-
-                        if (passwordHash.toString().equals(dbPass)) flagLogin = true;
-                    }
-*/
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
+        password = password + DbHandler.SALT;
+        byte[] dataBytes = password.getBytes();
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("MD5");
+            md.update(dataBytes);
+            byte[] mdbytes = md.digest();
+            StringBuffer stringBuffer = new StringBuffer();
+            for (int j = 0; j < mdbytes.length; j++) {
+                String s = Integer.toHexString(0xff & mdbytes[j]);
+                s = (s.length() == 1) ? "0" + s : s;
+                stringBuffer.append(s);
+            }
+            String hashPass = stringBuffer.toString();
 
 
-                if (flagLogin) {
+            etLogin.setText("");
+            etPassword.setText("");
+
+            int index = new AsyncLoginTask(login, hashPass).execute().get();
+            switch (index) {
+                case 0: {
                     loginStatus.setText("Успешно!");
-                 //   Intent intObj = new Intent(this, MainActivity.class);
-                 //   startActivity(intObj);
+                    dbHandler.syncUserItems();
+                    Intent intent = new Intent(context, NavigationActivity.class);
+                    startActivity(intent);
                     break;
-                } else {
-                    loginStatus.setText("Нерпавильный логин или пароль");
                 }
-
-                break;
+                case 1: {
+                    loginStatus.setText("Неправильный пароль или логин");
+                    break;
+                }
+                case 2: {
+                    loginStatus.setText("Ошибка соединения");
+                    break;
+                }
+                default: loginStatus.setText("Неизвестная ошибка");
             }
 
-            case R.id.btnBackToMainFromLogin:{
-               // Intent intObj = new Intent(this, MainActivity.class);
-            //    startActivity(intObj);
-                break;
+        } catch (NoSuchAlgorithmException | InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            loginStatus.setText("Неизвестная ошибка");
+        }
+    }
+
+    protected void goToRegistration()
+    {
+        Intent intent = new Intent(context, RegistrationActivity.class);
+        startActivity(intent);
+    }
+
+
+    class AsyncLoginTask extends AsyncTask<Void, Void, Integer> {
+
+        private String login, hashPass;
+
+        public AsyncLoginTask(String login, String hashPass) {
+            this.login = login;
+            this.hashPass = hashPass;
+        }
+
+        @Override
+        protected Integer doInBackground(Void... voids) {
+            Connection connection = null;
+            Statement st1 = null;
+            ResultSet rs1 = null;
+            try {
+                if (DbHandler.isOnline(context)) {
+                    if (DbHandler.needToReconnect)
+                        connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
+                    else
+                        connection = DbHandler.getConnection();
+                } else return 2;
+
+                String SQL = "SELECT " + DbHandler.KEY_ID +" FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login +
+                        "' and " + DbHandler.KEY_PASSWORD + " like '" + hashPass + "'";
+                st1 = connection.createStatement();
+                rs1 = st1.executeQuery(SQL);
+                if(rs1 != null && rs1.next())
+                {
+                    int id = rs1.getInt(1);
+                    st1.close();
+                    rs1.close();
+                    JSONHelper.CurrentUser currentUser = new JSONHelper.CurrentUser(id, login, hashPass);
+                    JSONHelper.exportToJSON(context, currentUser);
+                    return 0;
+                }else{
+                    st1.close();
+                    rs1.close();
+                    return 1;
+                }
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+                try {
+                    if (st1 != null)
+                        st1.close();
+                    if (rs1 != null)
+                        rs1.close();
+                } catch (java.sql.SQLException e1) {
+                    e1.printStackTrace();
+                    return -1;
+                }
+                return -1;
             }
         }
     }
 }
-

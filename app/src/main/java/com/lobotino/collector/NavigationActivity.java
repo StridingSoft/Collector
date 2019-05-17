@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
@@ -15,10 +16,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import java.sql.SQLException;
-
-import pub.devrel.easypermissions.EasyPermissions;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
@@ -35,7 +35,7 @@ public class NavigationActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        dbHandler = new DbHandler(this);
+        dbHandler = DbHandler.getInstance(this);
         try {
             dbHandler.openDataBase();
         }catch(SQLException e)
@@ -43,7 +43,14 @@ public class NavigationActivity extends AppCompatActivity
             e.printStackTrace();
         }
 
+        if(dbHandler.USER_ID == -1)
+        {
+            Intent intent = new Intent(this, RegistrationActivity.class);
+            startActivity(intent);
+        }
+
         setContentView(R.layout.activity_navigation);
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -57,11 +64,10 @@ public class NavigationActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        navigationView.setCheckedItem(R.id.nav_my_collections);
+        navigationView.setCheckedItem(R.id.nav_community_colletions);
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager
                 .beginTransaction();
-
 
 
         if(savedInstanceState == null || savedInstanceState.getBoolean("isEmpty"))
@@ -92,29 +98,29 @@ public class NavigationActivity extends AppCompatActivity
                 if (currentFragment instanceof CollectionsFragment) {
                     CollectionsFragment fragment = (CollectionsFragment) currentFragment;
                     fragment.clearOffers();
-                    if(fragment.getStatus() != "all") {
-                        switch (fragment.getStatus()) {
-                            case "section": {
-                                if (fragment.getType().equals("myCollections"))
-                                    fragment.printAllSections();
-                                else
-                                    fragment.printAllSections();
-                                break;
-                            }
-                            case "collection":{
-                                if (fragment.getType().equals("myCollections"))
-                                    fragment.printAllCollections();
-                                else
-                                    fragment.printAllCollections();
-                                break;
-                            }
-                            case "all": {
-                                if (fragment.getType().equals("myCollections"))
-                                    fragment.printAllCollections();
-                                else
-                                    fragment.printAllCollections();
-                                break;
-                            }
+
+                    switch (fragment.getStatus()) {
+                        case "section": {
+                            if (fragment.getType().equals("myCollections"))
+                                fragment.printAllSections();
+                            else
+                                fragment.printAllSections();
+
+                            break;
+                        }
+                        case "collection": {
+                            if (fragment.getType().equals("myCollections"))
+                                fragment.printAllCollections();
+                            else
+                                fragment.printAllCollections();
+                            break;
+                        }
+                        case "all": {
+                            if (fragment.getType().equals("myCollections"))
+                                fragment.printAllCollections();
+                            else
+                                fragment.printAllCollections();
+                            break;
                         }
                     }
                 }else{
@@ -126,7 +132,8 @@ public class NavigationActivity extends AppCompatActivity
                         bundle.putInt("id", fragment.getSectionId());
                         bundle.putString("type", fragment.getType());
                         bundle.putString("status", "section");
-                        bundle.putString("title", fragment.getArguments().getString("title"));
+                        bundle.putString("sectionTitle", fragment.getArguments().getString("sectionTitle"));
+                        bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
 
                         collectionsFragment.setArguments(bundle);
                         FragmentManager fragmentManager = getFragmentManager();
@@ -159,7 +166,7 @@ public class NavigationActivity extends AppCompatActivity
 
             dbHandler.clearCash();
             AlertDialog.Builder builder = new AlertDialog.Builder(NavigationActivity.this);
-            builder.setTitle("Кэш очищен!")
+            builder.setTitle("Cleaning complete!")
                     .setCancelable(false)
                     .setNegativeButton("ОК",
                             new DialogInterface.OnClickListener() {
@@ -174,6 +181,35 @@ public class NavigationActivity extends AppCompatActivity
         if(id == R.id.action_log_items)
         {
             dbHandler.logAllItems();
+        }
+        if(id == R.id.action_clear_user)
+        {
+            if(DbHandler.isOnline(getBaseContext())) {
+                dbHandler.changeUser(getBaseContext());
+                AlertDialog.Builder builder = new AlertDialog.Builder(NavigationActivity.this);
+                builder.setTitle("User file deleted!")
+                        .setCancelable(false)
+                        .setNegativeButton("ОК",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+                AlertDialog alert = builder.create();
+                alert.show();
+            }else{
+                AlertDialog.Builder builder = new AlertDialog.Builder(NavigationActivity.this);
+                builder.setTitle("Проверьте подключение с интернетом.")
+                        .setCancelable(false)
+                        .setNegativeButton("ОК",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+                AlertDialog alert = builder.create();
+                alert.show();
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -211,15 +247,6 @@ public class NavigationActivity extends AppCompatActivity
                 bundle.putString("type", "comCollections");
                 bundle.putString("status", "all");
                 currentFragment.setArguments(bundle);
-                fragmentTransaction.replace(R.id.content_frame, currentFragment);
-                fragmentTransaction.commit();
-                break;
-            }
-            case R.id.nav_registration :{
-                currentFragment = new RegisterFragment();
-                FragmentManager fragmentManager = getFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager
-                        .beginTransaction();
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
                 fragmentTransaction.commit();
                 break;

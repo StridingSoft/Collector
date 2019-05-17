@@ -9,6 +9,14 @@
         <item name="colorControlActivated">@color/colorWhite</item>
     </style>
 
+    <style name="AppTheme.MyActionBar">
+        <item name="android:background">@color/colorToolBar</item>
+    </style>
+
+    <style name="AppTheme.LoginTextStyle">
+        <item name="android:background">@color/colorBackground</item>
+    </style>
+
     <style name="AppTheme.ButtonReg">
         <item name="android:background">@drawable/button_reg</item>
     </style>
