@@ -1,4 +1,4 @@
-package com.lobotino.collector;
+package com.lobotino.collector.activities;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -19,6 +19,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.lobotino.collector.utils.DbHandler;
+import com.lobotino.collector.utils.JSONHandler;
+import com.lobotino.collector.R;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -56,7 +60,7 @@ public class RegistrationActivity extends AppCompatActivity {
         setContentView(R.layout.content_registration);
 
         context = getBaseContext();
-        dbHandler = NavigationActivity.dbHandler;
+        dbHandler = MainActivity.dbHandler;
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
 
@@ -199,7 +203,7 @@ public class RegistrationActivity extends AppCompatActivity {
             switch (index) {
                 case 0: {
                     regStatus.setText("Успешно!");
-                    Intent intent = new Intent(context, NavigationActivity.class);
+                    Intent intent = new Intent(context, MainActivity.class);
                     startActivity(intent);
                     break;
                 }
@@ -245,12 +249,8 @@ public class RegistrationActivity extends AppCompatActivity {
             ResultSet rs2 = null;
             ResultSet rs3= null;
             try {
-                if (DbHandler.isOnline(context)) {
-                    if (DbHandler.needToReconnect)
-                        connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                    else
-                        connection = DbHandler.getConnection();
-                } else return 1;
+                connection = DbHandler.getConnection(context);
+                if(connection == null) return 1;
 
                 String SQL = "SELECT " + DbHandler.KEY_ID +" FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login + "'";
                 st1 = connection.createStatement();
@@ -301,8 +301,8 @@ public class RegistrationActivity extends AppCompatActivity {
                 if(rs3 != null && rs3.next())
                 {
                     int id = rs3.getInt(1);
-                    JSONHelper.CurrentUser currentUser = new JSONHelper.CurrentUser(id, login, hashPass);
-                    JSONHelper.exportToJSON(context, currentUser);
+                    JSONHandler.CurrentUser currentUser = new JSONHandler.CurrentUser(id, login, hashPass, email);
+                    JSONHandler.exportToJSON(context, currentUser);
                     st3.close();
                     rs3.close();
                 }

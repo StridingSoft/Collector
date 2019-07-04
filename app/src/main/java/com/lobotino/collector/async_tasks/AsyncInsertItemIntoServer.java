@@ -1,8 +1,10 @@
-package com.lobotino.collector;
+package com.lobotino.collector.async_tasks;
 
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import com.lobotino.collector.utils.DbHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.Connection;

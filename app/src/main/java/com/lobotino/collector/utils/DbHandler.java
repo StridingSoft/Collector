@@ -1,4 +1,4 @@
-package com.lobotino.collector;
+package com.lobotino.collector.utils;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -12,6 +12,12 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
+import com.lobotino.collector.R;
+import com.lobotino.collector.activities.LoginActivity;
+import com.lobotino.collector.async_tasks.AsyncClearTable;
+import com.lobotino.collector.async_tasks.AsyncDownloadImgToServer;
+import com.lobotino.collector.async_tasks.AsyncUpdateUserItems;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -28,13 +35,14 @@ import java.util.Calendar;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 55;
+    public static final int DATABASE_VERSION = 57;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
     public static int USER_ID = -1;
     public static String USER_LOGIN = "";
     public static String USER_PASS = "";
+    public static String USER_EMAIL = "";
 
     public static String SALT;
 
@@ -94,12 +102,14 @@ public class DbHandler extends SQLiteOpenHelper{
         MSSQL_PASS = context.getString(R.string.database_pass);
         SALT = context.getString(R.string.salt);
 
-        JSONHelper.CurrentUser currentUser = JSONHelper.importFromJSON(context);
+
+        JSONHandler.CurrentUser currentUser = JSONHandler.importFromJSON(context);
         if(currentUser != null)
         {
             USER_ID = currentUser.getId();
             USER_LOGIN = currentUser.getLogin();
             USER_PASS = currentUser.getPass();
+            USER_EMAIL = currentUser.getEmail();
         }
 
         if (android.os.Build.VERSION.SDK_INT >= 17) {
@@ -118,23 +128,32 @@ public class DbHandler extends SQLiteOpenHelper{
             e.printStackTrace();
         }
 
-        //new SetConnectionThread().execute();
-        //Delete!
-       // clearTableOnServer(TABLE_ITEMS);
-        //fillItemsOnServer();
-        //fillDbOnServerDifSizes();
     }
 
-    public static Connection getConnection() {
-        return connection;
+    public static Connection getConnection(Context context) {
+        if (isOnline(context)) {
+            if (needToReconnect) {
+                needToReconnect = false;
+                try {
+                    connection = DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS);
+                    if(!connection.isClosed()) new AsyncSetLastActivityDate().execute();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            return connection;
+        } else {
+            needToReconnect = true;
+            return null;
+        }
     }
 
-    public static Connection setNewConnection(Connection con)
-    {
-        connection = con;
-        needToReconnect = false;
-        return connection;
-    }
+//    public static Connection setNewConnection(Connection con)
+//    {
+//        connection = con;
+//        needToReconnect = false;
+//        return connection;
+//    }
 
     private class setConnectionThread extends AsyncTask<Void, Void, Connection>
     {
@@ -162,8 +181,9 @@ public class DbHandler extends SQLiteOpenHelper{
         return false;
     }
 
-    public void clearCash()
+    public void clearCash() //Переделать систему - ломается!
     {
+//        mdb.delete(TABLE_ITEMS, KEY_ITEM_STATUS + " = ?", new String[]{"missing"});
         getDataBase().delete(TABLE_ITEMS, null, null);
         getDataBase().delete(TABLE_SECTIONS, null, null);
         getDataBase().delete(TABLE_COLLECTIONS, null, null);
@@ -269,6 +289,7 @@ public class DbHandler extends SQLiteOpenHelper{
               //  insertImage.execute();
             }
         }
+        cursorImages.close();
     }
 
     @Override
@@ -352,7 +373,27 @@ public class DbHandler extends SQLiteOpenHelper{
         return mDataBase.insert(table,nullColumnHack, values);
     }
 
-    private class AsyncSyncUserItems extends AsyncTask<Void, Void, Void>
+    private static class AsyncSetLastActivityDate extends AsyncTask<Void, Void, Void>
+    {
+        @Override
+        protected Void doInBackground(Void... voids) {
+            String SQL = "update " + DbHandler.TABLE_USERS + " SET " +  DbHandler.KEY_LAST_ACTIVITY_DAYE + " = ? WHERE " +  DbHandler.KEY_ID + " = " + DbHandler.USER_ID;
+            try {
+                PreparedStatement pSt = connection.prepareStatement(SQL);
+
+                DateFormat orig = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
+                String date = orig.format(Calendar.getInstance().getTime());
+                pSt.setString(1, date);
+                pSt.execute();
+                pSt.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    private class AsyncSyncUserItems extends AsyncTask<Void, Void, Void>    //Синхронизация предметов (вызывается при смене пользователя)
     {
         private Connection connection;
         private SQLiteDatabase mDb;
@@ -367,16 +408,14 @@ public class DbHandler extends SQLiteOpenHelper{
             Statement st = null;
             ResultSet rs = null;
             try {
-                if (DbHandler.needToReconnect)
-                    connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                else
-                    connection = DbHandler.getConnection();
+                connection = DbHandler.getConnection(mContext);
 
+                //Выставить missing ВСЕМ предметам пользователя
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(DbHandler.KEY_ITEM_STATUS, "missing");
                 mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{"in"});
 
-
+                //Из онлайн базы достать все предметы, которые есть у нового пользователя
                 String SQL = "SELECT " + DbHandler.KEY_ITEM_ID + " FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE "
                         + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID;
                 st = connection.createStatement();
@@ -386,6 +425,7 @@ public class DbHandler extends SQLiteOpenHelper{
                     int itemId = rs.getInt(1);
                     contentValues = new ContentValues();
                     contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+
                     mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
                 }
                 st.close();

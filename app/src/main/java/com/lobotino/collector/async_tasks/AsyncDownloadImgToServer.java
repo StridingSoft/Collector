@@ -1,4 +1,4 @@
-package com.lobotino.collector;
+package com.lobotino.collector.async_tasks;
 
 import android.content.Context;
 import android.graphics.Bitmap;

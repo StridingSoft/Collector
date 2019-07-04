@@ -9,7 +9,7 @@
     android:fillViewport="true"
     android:background="@color/colorBackground"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.lobotino.collector.RegistrationActivity">
+    tools:context="com.lobotino.collector.activities.RegistrationActivity">
 
     <EditText
         android:id="@+id/etLogin"

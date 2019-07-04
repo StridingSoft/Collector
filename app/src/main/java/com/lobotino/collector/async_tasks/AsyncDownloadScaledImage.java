@@ -1,4 +1,4 @@
-package com.lobotino.collector;
+package com.lobotino.collector.async_tasks;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -9,10 +9,10 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.widget.ImageView;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.lobotino.collector.utils.DbHandler;
+import com.lobotino.collector.activities.MainActivity;
 
-public class DownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
+public class AsyncDownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
 {
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
@@ -32,13 +32,13 @@ public class DownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
     private Context context;
     private byte[] blob = null;
 
-    public DownloadScaledImage(int itemId, int pictureSize, Context context) {  //Get Image from sqlite
+    public AsyncDownloadScaledImage(int itemId, int pictureSize, Context context) {  //Get Image from sqlite
         this.itemId = itemId;
         this.pictureSize = pictureSize;
         this.context = context;
     }
 
-    public DownloadScaledImage(byte[] blob, int pictureSize, Context context) { //Get Image from mysql
+    public AsyncDownloadScaledImage(byte[] blob, int pictureSize, Context context) { //Get Image from mysql
         this.pictureSize = pictureSize;
         this.context = context;
         this.blob = blob;
@@ -51,7 +51,7 @@ public class DownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
         if (blob == null) {
             SQLiteDatabase mDb;
             try {
-                mDb = NavigationActivity.dbHandler.getDataBase();
+                mDb = MainActivity.dbHandler.getDataBase();
             } catch (SQLException mSQLException) {
                 throw mSQLException;
             }

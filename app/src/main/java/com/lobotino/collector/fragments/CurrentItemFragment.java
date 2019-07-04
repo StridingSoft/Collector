@@ -1,7 +1,6 @@
-package com.lobotino.collector;
+package com.lobotino.collector.fragments;
 
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -29,16 +28,16 @@ import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import org.sqlite.core.DB;
+import com.lobotino.collector.utils.DbHandler;
+import com.lobotino.collector.activities.MainActivity;
+import com.lobotino.collector.R;
+import com.lobotino.collector.async_tasks.AsyncSetItemStatus;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-
-import pub.devrel.easypermissions.EasyPermissions;
 
 
 public class CurrentItemFragment extends Fragment {
@@ -78,15 +77,15 @@ public class CurrentItemFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         rootView = inflater.inflate(R.layout.fragment_current_item, container, false);
-        NavigationActivity navigationActivity = (NavigationActivity) getActivity();
-        navigationActivity.setCurrentFragment(this);
+        MainActivity mainActivity = (MainActivity) getActivity();
+        mainActivity.setCurrentFragment(this);
 
         itemId = getArguments().getInt("id");
         sectionId = getArguments().getInt("sectionId");
         type = getArguments().getString("type");
 
         context = getActivity().getBaseContext();
-        dbHandler = NavigationActivity.dbHandler;
+        dbHandler = MainActivity.dbHandler;
         screenWight = context.getResources().getDisplayMetrics().widthPixels;
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
         pictureSize = Math.round((float) (screenHeight /3*2));
@@ -300,44 +299,36 @@ public class CurrentItemFragment extends Fragment {
                         desc = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_DESCRIPTION));
                         blob = cursorItem.getBlob(cursorItem.getColumnIndex(DbHandler.KEY_IMAGE));
                         if (blob == null) {
-                            if(DbHandler.isOnline(context)) {
-                                    if(DbHandler.needToReconnect)
-                                        connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                                    else
-                                        connection = DbHandler.getConnection();
 
+                            connection = DbHandler.getConnection(context);
 
-                                if (connection != null) {
-                                    SQL = "SELECT " + DbHandler.KEY_IMAGE + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
-                                    st = connection.createStatement();
-                                    rs = st.executeQuery(SQL);
-                                    if (rs != null && !isCancelled()) {
+                            if (connection != null) {
+                                SQL = "SELECT " + DbHandler.KEY_IMAGE + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
+                                st = connection.createStatement();
+                                rs = st.executeQuery(SQL);
+                                if (rs != null && !isCancelled()) {
 
-                                        rs.next();
-                                        blob = rs.getBytes(1);
+                                    rs.next();
+                                    blob = rs.getBytes(1);
 
-                                        ContentValues contentValues = new ContentValues();
-                                        contentValues.put(DbHandler.KEY_IMAGE, blob);
+                                    ContentValues contentValues = new ContentValues();
+                                    contentValues.put(DbHandler.KEY_IMAGE, blob);
 
-                                        mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
+                                    mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
 
-                                        rs.close();
-                                        st.close();
-                                    }
+                                    rs.close();
+                                    st.close();
                                 }
-                            } else{
+
+                            } else {
                                 name += " (Оригинал не загружен)";
                                 blob = cursorItem.getBlob(cursorItem.getColumnIndex(DbHandler.KEY_MINI_IMAGE));
                             }
                         }
                     } else {
                         if(DbHandler.isOnline(context)) {
-                            if(DbHandler.isOnline(context)) {
-                                if(DbHandler.needToReconnect)
-                                    connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                                else
-                                    connection = DbHandler.getConnection();
-                            }
+
+                            connection = DbHandler.getConnection(context);
 
                             if (connection != null) {
                                 SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;

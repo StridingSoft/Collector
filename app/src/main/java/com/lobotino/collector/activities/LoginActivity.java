@@ -1,6 +1,5 @@
-package com.lobotino.collector;
+package com.lobotino.collector.activities;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.SQLException;
@@ -19,6 +18,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.lobotino.collector.utils.DbHandler;
+import com.lobotino.collector.utils.JSONHandler;
+import com.lobotino.collector.R;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -52,7 +55,7 @@ public class LoginActivity extends AppCompatActivity{
         actionBar.setTitle("Вход");
 
         context = getBaseContext();
-        dbHandler = NavigationActivity.dbHandler;
+        dbHandler = MainActivity.dbHandler;
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
 
@@ -142,7 +145,7 @@ public class LoginActivity extends AppCompatActivity{
                 case 0: {
                     loginStatus.setText("Успешно!");
                     dbHandler.syncUserItems();
-                    Intent intent = new Intent(context, NavigationActivity.class);
+                    Intent intent = new Intent(context, MainActivity.class);
                     startActivity(intent);
                     break;
                 }
@@ -185,24 +188,21 @@ public class LoginActivity extends AppCompatActivity{
             Statement st1 = null;
             ResultSet rs1 = null;
             try {
-                if (DbHandler.isOnline(context)) {
-                    if (DbHandler.needToReconnect)
-                        connection = DbHandler.setNewConnection(DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS));
-                    else
-                        connection = DbHandler.getConnection();
-                } else return 2;
+                connection = DbHandler.getConnection(context);
+                if(connection == null) return 2;
 
-                String SQL = "SELECT " + DbHandler.KEY_ID +" FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login +
+                String SQL = "SELECT " + DbHandler.KEY_ID + ", " + DbHandler.KEY_EMAIL + " FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login +
                         "' and " + DbHandler.KEY_PASSWORD + " like '" + hashPass + "'";
                 st1 = connection.createStatement();
                 rs1 = st1.executeQuery(SQL);
                 if(rs1 != null && rs1.next())
                 {
                     int id = rs1.getInt(1);
+                    String email = rs1.getString(2);
                     st1.close();
                     rs1.close();
-                    JSONHelper.CurrentUser currentUser = new JSONHelper.CurrentUser(id, login, hashPass);
-                    JSONHelper.exportToJSON(context, currentUser);
+                    JSONHandler.CurrentUser currentUser = new JSONHandler.CurrentUser(id, login, hashPass,email);
+                    JSONHandler.exportToJSON(context, currentUser);
                     return 0;
                 }else{
                     st1.close();

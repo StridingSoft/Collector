@@ -21,7 +21,7 @@
         android:theme="@style/AppTheme"
         android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
         <activity
-            android:name=".NavigationActivity"
+            android:name=".activities.MainActivity"
             android:label="@string/title_activity_main2"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -31,11 +31,11 @@
             </intent-filter>
         </activity>
         <activity
-        android:name=".LoginActivity"
+        android:name=".activities.LoginActivity"
         android:label="@string/Login"
         android:theme="@style/AppTheme.MyActionBar" />
         <activity
-            android:name=".RegistrationActivity"
+            android:name=".activities.RegistrationActivity"
             android:label="@string/Register"
             android:theme="@style/AppTheme.MyActionBar" />
     </application>

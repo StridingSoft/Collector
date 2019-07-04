@@ -56,4 +56,8 @@
     <string name="action_go_out">Сменить пользователя</string>
     <string name="title_activity_login1">LoginActivity1</string>
     <string name="Registr">Регистрация</string>
+    <string name="MyProfile">Мой профиль</string>
+    <string name="Collections">Коллекции</string>
+    <string name="Other">Прочее</string>
+    <string name="Settings">Настройки</string>
 </resources>

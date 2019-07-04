@@ -1,9 +1,9 @@
-package com.lobotino.collector;
+package com.lobotino.collector.utils;
 
 import android.content.Context;
-import android.os.Environment;
 
 import com.google.gson.Gson;
+import com.lobotino.collector.R;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,9 +12,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class JSONHelper {
+public class JSONHandler {
 
-    static boolean exportToJSON(Context context, CurrentUser currentUser) {
+    public static boolean exportToJSON(Context context, CurrentUser currentUser) {
 
         Gson gson = new Gson();
 
@@ -36,6 +36,7 @@ public class JSONHelper {
             DbHandler.USER_ID = currentUser.getId();
             DbHandler.USER_LOGIN = currentUser.getLogin();
             DbHandler.USER_PASS = currentUser.getPass();
+            DbHandler.USER_EMAIL = currentUser.getEmail();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -52,7 +53,7 @@ public class JSONHelper {
         return false;
     }
 
-    static CurrentUser importFromJSON(Context context) {
+    public static CurrentUser importFromJSON(Context context) {
 
         InputStreamReader streamReader = null;
         FileInputStream fileInputStream = null;
@@ -86,18 +87,18 @@ public class JSONHelper {
         return null;
     }
 
-    public static class CurrentUser{
+    public static class CurrentUser {
         private int id;
-        private String login, pass;
+        private String login, pass, email;
 
-        public CurrentUser(int id, String login, String pass) {
+        public CurrentUser(int id, String login, String pass, String email) {
             this.id = id;
             this.login = login;
             this.pass = pass;
+            this.email = email;
         }
 
-        public int getId()
-        {
+        public int getId() {
             return id;
         }
 
@@ -107,6 +108,10 @@ public class JSONHelper {
 
         public String getPass() {
             return pass;
+        }
+
+        public String getEmail() {
+            return email;
         }
     }
 }

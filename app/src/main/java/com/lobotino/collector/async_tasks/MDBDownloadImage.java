@@ -1,12 +1,14 @@
-package com.lobotino.collector;
+package com.lobotino.collector.async_tasks;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.widget.ImageView;
+
+import com.lobotino.collector.utils.DbHandler;
+import com.lobotino.collector.activities.MainActivity;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -80,7 +82,7 @@ public class MDBDownloadImage extends AsyncTask<Integer, Void, Void> {
         {
             SQLiteDatabase mDb;
             try {
-                mDb = NavigationActivity.dbHandler.getDataBase();
+                mDb = MainActivity.dbHandler.getDataBase();
             } catch (SQLException mSQLException) {
                 throw mSQLException;
             }
@@ -95,7 +97,7 @@ public class MDBDownloadImage extends AsyncTask<Integer, Void, Void> {
 
             if(imageView != null)
             {
-                DownloadScaledImage downloadScaledImage = new DownloadScaledImage(id, pictureSize, context);
+                AsyncDownloadScaledImage downloadScaledImage = new AsyncDownloadScaledImage(id, pictureSize, context);
                 downloadScaledImage.execute(imageView);
             }
         }
