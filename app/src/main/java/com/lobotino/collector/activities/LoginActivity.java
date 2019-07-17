@@ -39,7 +39,6 @@ public class LoginActivity extends AppCompatActivity{
     private ActionBar actionBar;
     private Context context;
     private DbHandler dbHandler;
-    private SQLiteDatabase mDb;
     private int screenWidth, screenHeight;
     private EditText etLogin, etPassword;
     private TextView loginStatus;
@@ -55,7 +54,7 @@ public class LoginActivity extends AppCompatActivity{
         actionBar.setTitle("Вход");
 
         context = getBaseContext();
-        dbHandler = MainActivity.dbHandler;
+        dbHandler = DbHandler.getInstance(context);
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
 
@@ -82,11 +81,6 @@ public class LoginActivity extends AppCompatActivity{
             dbHandler.updateDataBase();
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
-        }
-        try {
-            mDb = dbHandler.getWritableDatabase();
-        } catch (SQLException mSQLException) {
-            throw mSQLException;
         }
 
         Button loginButton = (Button)findViewById(R.id.btnGoToLogin);
@@ -188,7 +182,7 @@ public class LoginActivity extends AppCompatActivity{
             Statement st1 = null;
             ResultSet rs1 = null;
             try {
-                connection = DbHandler.getConnection(context);
+                connection = dbHandler.getConnection(context);
                 if(connection == null) return 2;
 
                 String SQL = "SELECT " + DbHandler.KEY_ID + ", " + DbHandler.KEY_EMAIL + " FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login +

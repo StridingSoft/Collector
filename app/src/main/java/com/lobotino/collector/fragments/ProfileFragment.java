@@ -40,6 +40,8 @@ public class ProfileFragment extends Fragment {
     protected TextView userName, lastActivity, userEmail;
     protected ActionBar actionBar;
 
+    private Button btnAllCollections, btnWishes, btnTrade;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -63,9 +65,9 @@ public class ProfileFragment extends Fragment {
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
         avatarSize = Math.round((float) (screenWight / 3));
 
-        Button btnAllCollections = rootView.findViewById(R.id.btn_list_i_have);
-        Button btnWishes = rootView.findViewById(R.id.btn_list_i_wish);
-        Button btnTrade = rootView.findViewById(R.id.btn_trade);
+        btnAllCollections = rootView.findViewById(R.id.btn_list_i_have);
+        btnWishes         = rootView.findViewById(R.id.btn_list_i_wish);
+        btnTrade         = rootView.findViewById(R.id.btn_trade);
 
         float dip = 17f;
         Resources r = getResources();
@@ -74,6 +76,8 @@ public class ProfileFragment extends Fragment {
 
         btnWishes.setWidth(screenWight/2 - margins - secondMargins);
         btnTrade.setWidth(screenWight/2 - margins - secondMargins);
+
+
 
 
         ImageView avatar = rootView.findViewById(R.id.ivAvatar);
@@ -111,7 +115,7 @@ public class ProfileFragment extends Fragment {
         @Override
         protected List<String> doInBackground(Void... voids) {
 
-            Connection connection = DbHandler.getConnection(getContext());
+            Connection connection = dbHandler.getConnection(getContext());
             Statement st = null;
             ResultSet rs = null;
 
@@ -154,6 +158,10 @@ public class ProfileFragment extends Fragment {
             String name = list.get(0);
             String email = list.get(1);
             String lastAct = list.get(2);
+
+            if(name.equals(DbHandler.USER_LOGIN)) {
+                btnAllCollections.setEnabled(false);
+            }
 
             actionBar.setTitle("Профиль " + name);
             userName.setText(name);

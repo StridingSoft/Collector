@@ -60,4 +60,8 @@
     <string name="Collections">Коллекции</string>
     <string name="Other">Прочее</string>
     <string name="Settings">Настройки</string>
+    <string name="Add">Add</string>
+    <string name="desc_elem">Описание элемента</string>
+    <string name="Ready">Готово</string>
+    <string name="name_elem">Название элемента</string>
 </resources>

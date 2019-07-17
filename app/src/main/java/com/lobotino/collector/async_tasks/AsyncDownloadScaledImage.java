@@ -6,11 +6,23 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.widget.ImageView;
 
 import com.lobotino.collector.utils.DbHandler;
 import com.lobotino.collector.activities.MainActivity;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class AsyncDownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
 {
@@ -29,6 +41,7 @@ public class AsyncDownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
 
     private ImageView imageView;
     private int itemId, pictureSize;
+    private Uri path;
     private Context context;
     private byte[] blob = null;
 
@@ -44,23 +57,52 @@ public class AsyncDownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
         this.blob = blob;
     }
 
+    public AsyncDownloadScaledImage(Uri path, int pictureSize, Context context) { //Get Image from file
+        this.pictureSize = pictureSize;
+        this.context = context;
+        this.itemId = -1;
+        this.path = path;
+    }
+
     @Override
     protected Bitmap doInBackground(ImageView... views) {
-        imageView = views[0];
+        if(views.length > 0)
+            imageView = views[0];
 
         if (blob == null) {
-            SQLiteDatabase mDb;
-            try {
-                mDb = MainActivity.dbHandler.getDataBase();
-            } catch (SQLException mSQLException) {
-                throw mSQLException;
-            }
+            if(itemId == -1) {
+                try {
+//                    File file = new File(path);
+//                    blob =  new byte[(int)file.length()];
+                    FileInputStream fis = (FileInputStream)context.getContentResolver().openInputStream(path);
+                    ArrayList<Byte> list = new ArrayList<>();
+                    int result = fis.read();
+                    while(result != -1) {
+                        list.add((byte)result);
+                        result = fis.read();
+                    }
+                    blob = new byte[(int)list.size()];
+                    for (int i = 0; i < list.size(); i++) {
+                        blob[i] = list.get(i);
+                    }
 
-            Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_IMAGE}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
-            if (cursor.moveToFirst()) {
-                blob = cursor.getBlob(cursor.getColumnIndex(DbHandler.KEY_IMAGE));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else {
+                SQLiteDatabase mDb;
+                try {
+                    mDb = MainActivity.dbHandler.getDataBase();
+                } catch (SQLException mSQLException) {
+                    throw mSQLException;
+                }
+
+                Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_IMAGE}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                if (cursor.moveToFirst()) {
+                    blob = cursor.getBlob(cursor.getColumnIndex(DbHandler.KEY_IMAGE));
+                }
+                cursor.close();
             }
-            cursor.close();
         }
 
         BitmapFactory.Options o = new BitmapFactory.Options();
@@ -80,6 +122,7 @@ public class AsyncDownloadScaledImage extends AsyncTask<ImageView, Void, Bitmap>
     @Override
     protected void onPostExecute(Bitmap bitmap) {
         super.onPostExecute(bitmap);
-        imageView.setImageBitmap(bitmap);
+        if(imageView != null)
+            imageView.setImageBitmap(bitmap);
     }
 }

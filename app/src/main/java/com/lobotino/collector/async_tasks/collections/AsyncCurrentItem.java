@@ -35,6 +35,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static com.lobotino.collector.activities.MainActivity.dbHandler;
 import static com.lobotino.collector.fragments.CollectionsFragment.clearOffers;
 import static com.lobotino.collector.fragments.CollectionsFragment.collectionTitle;
 import static com.lobotino.collector.fragments.CollectionsFragment.countImages;
@@ -124,7 +125,7 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
             Statement st = null;
             ResultSet rs = null;
             try {
-                Connection connection = DbHandler.getConnection(context);
+                Connection connection = dbHandler.getConnection(context);
 
                 Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
                 int count = cursor.getCount();
@@ -322,7 +323,7 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
                             bundle.putInt("id", itemId);
                             bundle.putInt("itemId", itemId);
                             bundle.putInt("sectionId", secId);
-                            bundle.putString("type", fragmentType);
+                            bundle.putString(DbHandler.COL_TYPE, fragmentType);
                             bundle.putString("collectionTitle", collectionTitle);
                             bundle.putString("sectionTitle", sectionTitle);
                             currentItemFragment.setArguments(bundle);

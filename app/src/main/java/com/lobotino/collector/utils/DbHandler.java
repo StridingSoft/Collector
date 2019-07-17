@@ -15,8 +15,7 @@ import android.util.Log;
 import com.lobotino.collector.R;
 import com.lobotino.collector.activities.LoginActivity;
 import com.lobotino.collector.async_tasks.AsyncClearTable;
-import com.lobotino.collector.async_tasks.AsyncDownloadImgToServer;
-import com.lobotino.collector.async_tasks.AsyncUpdateUserItems;
+import com.lobotino.collector.async_tasks.AsyncGetBitmapsFromUri;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,7 +34,7 @@ import java.util.Calendar;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 57;
+    public static final int DATABASE_VERSION = 63;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
@@ -72,14 +71,20 @@ public class DbHandler extends SQLiteOpenHelper{
     public static final String KEY_LAST_ACTIVITY_DAYE = "LastActivityDate";
 
     public static final String STATUS_IN = "in";
-    public static final String STATUS_SELLING = "on sell";
-    public static final String STATUS_TRADE = "on trade";
+    public static final String STATUS_TRADE = "trade";
+    public static final String STATUS_WISH = "wish";
+    public static final String STATUS_MISS = "missing";
+
+    public static final String MY_COLLECTIONS = "myCollections";
+    public static final String COM_COLLECTIONS = "comCollections";
+
+    public static final String COL_TYPE = "collectionType";
 
     public static String MSSQL_DB;
     public static String MSSQL_LOGIN;
     public static String MSSQL_PASS;
 
-    public static boolean needToReconnect = true;
+    public static boolean needToReconnect = true, needToSync = false;
 
     private static Connection connection;
 
@@ -127,16 +132,19 @@ public class DbHandler extends SQLiteOpenHelper{
         {
             e.printStackTrace();
         }
-
     }
 
-    public static Connection getConnection(Context context) {
+    public Connection getConnection(Context context) {
         if (isOnline(context)) {
             if (needToReconnect) {
                 needToReconnect = false;
                 try {
                     connection = DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS);
-                    if(!connection.isClosed()) new AsyncSetLastActivityDate().execute();
+                    if(!connection.isClosed()) {
+                        new AsyncSetLastActivityDate().execute();
+
+                        if(needToSync) syncUserItems();
+                    }
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -147,6 +155,7 @@ public class DbHandler extends SQLiteOpenHelper{
             return null;
         }
     }
+
 
 //    public static Connection setNewConnection(Connection con)
 //    {
@@ -181,18 +190,22 @@ public class DbHandler extends SQLiteOpenHelper{
         return false;
     }
 
-    public void clearCash() //Переделать систему - ломается!
+    public void clearCash() //TO DO чистить секции и коллекции!
     {
-//        mdb.delete(TABLE_ITEMS, KEY_ITEM_STATUS + " = ?", new String[]{"missing"});
-        getDataBase().delete(TABLE_ITEMS, null, null);
-        getDataBase().delete(TABLE_SECTIONS, null, null);
-        getDataBase().delete(TABLE_COLLECTIONS, null, null);
+  //      getDataBase().delete(TABLE_ITEMS, KEY_ITEM_STATUS + " = ?", new String[]{"missing"});
+//        getDataBase().delete(TABLE_ITEMS, null, null);
+//        getDataBase().delete(TABLE_SECTIONS, null, null);
+//        getDataBase().delete(TABLE_COLLECTIONS, null, null);
+//        syncUserItems();
         Log.d("mDb", "Cash clear succes");
     }
 
     public void syncUserItems()
     {
-        new AsyncSyncUserItems(this.getDataBase()).execute();
+        if(isOnline(mContext))
+            new AsyncSyncUserItems(this.getWritableDatabase()).execute(); //mdb == null?
+        else
+            needToSync = true;
     }
 
     public void changeUser(Context context) //Нужна проверка на онлайн
@@ -229,10 +242,6 @@ public class DbHandler extends SQLiteOpenHelper{
         asyncClearTable.execute(table);
     }
 
-    private void updateUserItems()
-    {
-        new AsyncUpdateUserItems().execute();
-    }
 
     private void fillItemsOnServer()
     {
@@ -251,8 +260,8 @@ public class DbHandler extends SQLiteOpenHelper{
                 DateFormat orig = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
                 String date = orig.format(Calendar.getInstance().getTime());
 
-                AsyncDownloadImgToServer insertImage = new AsyncDownloadImgToServer(name, desc, pathToImage, id, idSection, date, 400, 1024, mContext);
-                insertImage.execute();
+//                AsyncGetBitmapsFromUri insertImage = new AsyncGetBitmapsFromUri(pathToImage,400, 1024, mContext);
+//                insertImage.execute();
                 cursorImages.moveToNext();
             }
         }
@@ -285,7 +294,7 @@ public class DbHandler extends SQLiteOpenHelper{
                 int columnIndex = cursorImages.getColumnIndex(KEY_IMAGE);
                 String pathToImage = cursorImages.getString(columnIndex);
 
-              //  AsyncDownloadImgToServer insertImage = new AsyncDownloadImgToServer(size + "", desc, pathToImage, i, 0, 128, (int)size, mContext);
+              //  AsyncGetBitmapsFromUri insertImage = new AsyncGetBitmapsFromUri(size + "", desc, pathToImage, i, 0, 128, (int)size, mContext);
               //  insertImage.execute();
             }
         }
@@ -405,10 +414,16 @@ public class DbHandler extends SQLiteOpenHelper{
         @Override
         protected Void doInBackground(Void... voids) {
 
-            Statement st = null;
-            ResultSet rs = null;
+            Statement st1 = null;
+            ResultSet rs1 = null;
+            Statement st2 = null;
+            ResultSet rs2 = null;
+            Statement st3 = null;
+            ResultSet rs3 = null;
+            Statement st4 = null;
+            ResultSet rs4 = null;
             try {
-                connection = DbHandler.getConnection(mContext);
+                connection = getConnection(mContext);
 
                 //Выставить missing ВСЕМ предметам пользователя
                 ContentValues contentValues = new ContentValues();
@@ -418,31 +433,114 @@ public class DbHandler extends SQLiteOpenHelper{
                 //Из онлайн базы достать все предметы, которые есть у нового пользователя
                 String SQL = "SELECT " + DbHandler.KEY_ITEM_ID + " FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE "
                         + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID;
-                st = connection.createStatement();
-                rs = st.executeQuery(SQL);
-                while(rs.next())
+                st1 = connection.createStatement();
+                rs1 = st1.executeQuery(SQL);
+                while(rs1.next())
                 {
-                    int itemId = rs.getInt(1);
-                    contentValues = new ContentValues();
-                    contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                    int itemId = rs1.getInt(1);
 
-                    mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
-                }
-                st.close();
-                rs.close();
 
-                //TO DO чтобы при нахождении нескачанного итема - качалось
-                //И при открытии моих коллекций при отчищенном кеше - качать качать
+                    Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_ID + " = ?", new String[]{itemId + ""}, null, null, null);
+                    if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
+                        contentValues = new ContentValues();
+                        contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                        mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
+                    }else {
+                        SQL = "SELECT " + DbHandler.KEY_ID + ", " + DbHandler.KEY_SECTION_ID  + ", " + DbHandler.KEY_NAME  + ", " + DbHandler.KEY_DESCRIPTION  + ", " +
+                                DbHandler.KEY_MINI_IMAGE + ", " + DbHandler.KEY_DATE_OF_CHANGE + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + itemId;
+                        st2 = connection.createStatement();
+                        rs2 = st2.executeQuery(SQL);
+                        if(rs2.next()) {
+                            int id = rs2.getInt(1);
+                            int secId = rs2.getInt(2);
+                            String name = rs2.getString(3);
+                            String desc = rs2.getString(4);
+                            byte[] blob = rs2.getBytes(5);
+                            String serverDateStr = rs2.getString(6);
+
+                            st2.close();
+                            rs2.close();
+
+                            contentValues = new ContentValues();
+                            contentValues.put(DbHandler.KEY_ID, id);
+                            contentValues.put(DbHandler.KEY_SECTION_ID, secId);
+                            contentValues.put(DbHandler.KEY_NAME, name);
+                            contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
+                            contentValues.put(DbHandler.KEY_MINI_IMAGE, blob);
+                            contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                            contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, serverDateStr);
+                            mDb.insert(DbHandler.TABLE_ITEMS, null, contentValues);
+
+                            //Качаем секцию
+                            Cursor cursorSections = mDb.query(DbHandler.TABLE_SECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_ID + " = ?", new String[]{secId + ""}, null, null, null);
+                            if (cursorSections.getCount() == 0) {
+                                SQL = "SELECT * FROM " + DbHandler.TABLE_SECTIONS + " WHERE "
+                                        + DbHandler.KEY_ID + " = " + secId;
+                                st3 = connection.createStatement();
+                                rs3 = st3.executeQuery(SQL);
+
+                                if (rs3.next()) {
+                                    int collectionId = rs3.getInt(2);
+
+                                    contentValues = new ContentValues();
+                                    contentValues.put(DbHandler.KEY_ID, rs3.getInt(1));
+                                    contentValues.put(DbHandler.KEY_COLLECTION_ID, collectionId);
+                                    contentValues.put(DbHandler.KEY_NAME, rs3.getString(3));
+                                    contentValues.put(DbHandler.KEY_DESCRIPTION, rs3.getString(4));
+                                    mDb.insert(DbHandler.TABLE_SECTIONS, null, contentValues);
+
+                                    st3.close();
+                                    rs3.close();
+
+                                    //Качаем коллекцию
+                                    Cursor cursorCollection = mDb.query(DbHandler.TABLE_COLLECTIONS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_ID + " = ?", new String[]{collectionId + ""}, null, null, null);
+                                    if (cursorCollection.getCount() == 0) {
+                                        SQL = "SELECT * FROM " + DbHandler.TABLE_COLLECTIONS + " WHERE "
+                                                + DbHandler.KEY_ID + " = " + collectionId;
+                                        st4 = connection.createStatement();
+                                        rs4 = st4.executeQuery(SQL);
+                                        if (rs4.next()) {
+                                            contentValues = new ContentValues();
+                                            contentValues.put(DbHandler.KEY_ID, rs4.getInt(1));
+                                            contentValues.put(DbHandler.KEY_NAME, rs4.getString(2));
+                                            contentValues.put(DbHandler.KEY_DESCRIPTION, rs4.getString(3));
+                                            mDb.insert(DbHandler.TABLE_COLLECTIONS, null, contentValues);
+
+                                            st4.close();
+                                            rs4.close();
+                                        }
+                                    }
+                                    cursorCollection.close();
+                                }
+                            }
+                            cursorSections.close();
+                        }
+                    }
+                    cursorItems.close();
+
+                 }
+                st1.close();
+                rs1.close();
             }
             catch (SQLException e) {
                 e.printStackTrace();
-                if (st != null) try {
-                    st.close();
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
-                if (rs != null) try {
-                    rs.close();
+                try {
+                    if (st1 != null)
+                        st1.close();
+                    if (rs1 != null)
+                        rs1.close();
+                    if (st2 != null)
+                        st2.close();
+                    if (rs2 != null)
+                        rs2.close();
+                    if (st3 != null)
+                        st3.close();
+                    if (rs3 != null)
+                        rs3.close();
+                    if (st4 != null)
+                        st4.close();
+                    if (rs4 != null)
+                        rs4.close();
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 }

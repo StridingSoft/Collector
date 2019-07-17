@@ -1,6 +1,8 @@
 package com.lobotino.collector.fragments;
 
 import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -27,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lobotino.collector.utils.DbHandler;
 import com.lobotino.collector.activities.MainActivity;
@@ -35,7 +38,6 @@ import com.lobotino.collector.async_tasks.AsyncSetItemStatus;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -43,8 +45,9 @@ import java.sql.Statement;
 public class CurrentItemFragment extends Fragment {
 
     private int itemId;
+    public String itemName;
     private int sectionId;
-    private String type;
+    private String collectionsType;
 
     private DbHandler dbHandler;
     private SQLiteDatabase mDb;
@@ -56,21 +59,22 @@ public class CurrentItemFragment extends Fragment {
     private ScrollView scrollView;
     private Button buttonBack;
     private ActionBar actionBar;
-    private ImageButton buttonTrade, buttonSell, buttonHaveIt;
+    private ImageButton buttonTrade, buttonWish, buttonHaveIt;
     private TextView tvDescriptionTitle, tvDescription;
     private Connection connection;
-    private boolean inMyCollection = false;
+    private boolean inMyCollection = false, inMyWishes = false, inTrade = false;
     public int getItemId(){
         return itemId;
     }
+    public CurrentItemFragment currentFragment;
 
     public int getSectionId(){
         return sectionId;
     }
 
-    public String getType()
+    public String getCollectionsType()
     {
-        return type;
+        return collectionsType;
     }
 
     @Nullable
@@ -79,10 +83,18 @@ public class CurrentItemFragment extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_current_item, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
+        currentFragment = this;
 
-        itemId = getArguments().getInt("id");
-        sectionId = getArguments().getInt("sectionId");
-        type = getArguments().getString("type");
+        if(savedInstanceState != null)
+        {
+            itemId = savedInstanceState.getInt("id");
+            sectionId = savedInstanceState.getInt("sectionId");
+            collectionsType = savedInstanceState.getString(DbHandler.COL_TYPE);
+        }else {
+            itemId = getArguments().getInt("id");
+            sectionId = getArguments().getInt("sectionId");
+            collectionsType = getArguments().getString(DbHandler.COL_TYPE);
+        }
 
         context = getActivity().getBaseContext();
         dbHandler = MainActivity.dbHandler;
@@ -149,8 +161,21 @@ public class CurrentItemFragment extends Fragment {
             buttonSize = screenHeight > screenWight ? screenWight / 10 : screenHeight / 10;
             int buttonMargin = screenHeight > screenWight ? screenWight / 22 : screenHeight / 22;
 
+            Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+
+            if(cursor.moveToFirst()) {
+                if (cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_IN)) {
+                    inMyCollection = true;
+                } else if (cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_WISH)) {
+                    inMyWishes = true;
+                } else if (cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_TRADE)) {
+                    inTrade = true;
+                }
+            }
+            cursor.close();
+
             buttonTrade = new ImageButton(context);
-            Drawable  img = context.getDrawable(R.drawable.trade_button);
+            Drawable img = context.getDrawable((inTrade && inMyCollection) ? R.drawable.ic_on_trade : R.drawable.trade_button);
             buttonTrade.setImageDrawable(img);
             buttonTrade.setBackground(buttonBackground);
             int buttonTradeId = View.generateViewId();
@@ -160,32 +185,108 @@ public class CurrentItemFragment extends Fragment {
             buttonParams.addRule(RelativeLayout.CENTER_HORIZONTAL, imageId);
             buttonParams.setMargins(0, buttonMargin, 0, 0);
             buttonTrade.setLayoutParams(buttonParams);
+            buttonTrade.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (collectionsType.equals(DbHandler.MY_COLLECTIONS)) {
+                        Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                        if (cursor.moveToFirst()) {
+                            String newStatus;
+                            if (!cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_TRADE)) {
+                                newStatus = DbHandler.STATUS_TRADE;
+                                inTrade = true;
+                                Toast toast = Toast.makeText(context, "Добавлено в обменный список", Toast.LENGTH_SHORT);
+                                toast.show();
+                            } else {
+                                newStatus = DbHandler.STATUS_IN;
+                                inTrade = false;
+                            }
 
-            buttonSell = new ImageButton(context);
-            img = context.getDrawable(R.drawable.sell_button);
-            buttonSell.setImageDrawable(img);
-            buttonSell.setBackground(buttonBackground);
+                            AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
+                            asyncSetItemStatus.execute(newStatus);
+
+                            buttonTrade.setImageResource(inTrade ? R.drawable.ic_on_trade : R.drawable.trade_button);
+                        }
+                        cursor.close();
+                        return;
+                    }
+                    if (collectionsType.equals(DbHandler.COM_COLLECTIONS)) {
+                        UsersListFragment usersListFragment = new UsersListFragment();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("itemId", currentFragment.itemId);
+                        bundle.putString("itemName", currentFragment.itemName);
+                        bundle.putString("usersTypeString", UsersListFragment.Users.TRADED_PEOPLE.toString());
+
+                        usersListFragment.setArguments(bundle);
+                        FragmentManager fragmentManager = getFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager
+                                .beginTransaction();
+                        fragmentTransaction.replace(R.id.content_frame, usersListFragment);
+                        fragmentTransaction.commit();
+                    }
+
+                }
+            });
+
+            buttonWish = new ImageButton(context);
+            img = context.getDrawable(inMyWishes ? R.mipmap.ic_heart_2 : R.mipmap.ic_heart_outline_2);
+            buttonWish.setImageDrawable(img);
+            buttonWish.setBackground(buttonBackground);
             int buttonSellId = View.generateViewId();
-            buttonSell.setId(buttonSellId);
+            buttonWish.setId(buttonSellId);
             buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
             buttonParams.addRule(RelativeLayout.BELOW, imageId);
             buttonParams.addRule(RelativeLayout.ALIGN_START, buttonTradeId);
             buttonParams.setMargins(buttonMargin + buttonSize, buttonMargin, 0, 0);
-            buttonSell.setLayoutParams(buttonParams);
+            buttonWish.setLayoutParams(buttonParams);
+            buttonWish.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    if (collectionsType.equals(DbHandler.MY_COLLECTIONS)) {
+                        UsersListFragment usersListFragment = new UsersListFragment();
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("itemId", currentFragment.itemId);
+                        bundle.putString("itemName", currentFragment.itemName);
+                        bundle.putString("usersTypeString", UsersListFragment.Users.TRADED_PEOPLE.toString());
+
+                        usersListFragment.setArguments(bundle);
+                        FragmentManager fragmentManager = getFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager
+                                .beginTransaction();
+                        fragmentTransaction.replace(R.id.content_frame, usersListFragment);
+                        fragmentTransaction.commit();
+                        return;
+                    }
+                    if (collectionsType.equals(DbHandler.COM_COLLECTIONS)) {
+                        Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
+                        if (cursor.moveToFirst()) {
+                            String newStatus;
+                            if (!cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_WISH)) {
+                                newStatus = DbHandler.STATUS_WISH;
+                                inMyCollection = false;
+                                inMyWishes = true;
+                                buttonHaveIt.setImageResource(R.drawable.i_have_it_button);
+                                Toast toast = Toast.makeText(context, "Добавлено в список желаемого", Toast.LENGTH_SHORT);
+                                toast.show();
+                            } else {
+                                newStatus = "missing";
+                                inMyCollection = false;
+                                inMyWishes = false;
+                            }
+
+
+                            AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
+                            asyncSetItemStatus.execute(newStatus);
+
+                            buttonWish.setImageResource(inMyWishes ? R.mipmap.ic_heart_2 : R.mipmap.ic_heart_outline_2);
+                        }
+                        cursor.close();
+                    }
+                }
+            });
 
             buttonHaveIt = new ImageButton(context);
-
-            Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
-
-            if(cursor.moveToFirst())
-            {
-                if(cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals("in"))
-                {
-                    inMyCollection = true;
-                }
-            }
-            cursor.close();
-
             img = context.getDrawable(inMyCollection ? R.drawable.ic_in_my_collection : R.drawable.i_have_it_button);
             buttonHaveIt.setImageDrawable(img);
             buttonHaveIt.setBackground(buttonBackground);
@@ -200,24 +301,26 @@ public class CurrentItemFragment extends Fragment {
                     Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
                     if(cursor.moveToFirst())
                     {
-                        String newStatus;
-                      //  ContentValues contentValues = new ContentValues();
+                        String newStatus, toastMessage;
                         if(cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals("in")) {
-                            newStatus = "missing";
+                            newStatus = DbHandler.STATUS_MISS;
                             inMyCollection = false;
+                            inMyWishes = false;
                         }
                         else {
-                            newStatus = "in";
+                            newStatus = DbHandler.STATUS_IN;
                             inMyCollection = true;
+                            inMyWishes = false;
+                            buttonWish.setImageResource(R.mipmap.ic_heart_outline_2);
+                            Toast toast = Toast.makeText(context, "Добавлено в мои коллекции", Toast.LENGTH_SHORT);
+                            toast.show();
                         }
-                       // contentValues.put(DbHandler.KEY_ITEM_STATUS, newStatus);
-                       // mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
 
-                            AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
-                            asyncSetItemStatus.execute(newStatus);
-                        cursor.close();
 
-                        buttonHaveIt.setImageResource(inMyCollection ? R.drawable.ic_in_my_collection : R.drawable.i_have_it_button);
+                        AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
+                        asyncSetItemStatus.execute(newStatus);
+
+                        buttonHaveIt.setImageResource(inMyCollection || inTrade ? R.drawable.ic_in_my_collection : R.drawable.i_have_it_button);
                     }
                     cursor.close();
                 }
@@ -229,26 +332,27 @@ public class CurrentItemFragment extends Fragment {
             tvDescriptionTitle.setText("Описание:");
             RelativeLayout.LayoutParams descTitleParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             descTitleParams.addRule(RelativeLayout.BELOW, imageId);
-            descTitleParams.addRule(RelativeLayout.ALIGN_LEFT, imageId);
-            descTitleParams.setMargins(0, buttonSize + descMargin, 0, 0);
+            descTitleParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            descTitleParams.setMargins(buttonSize/3*2, buttonSize + descMargin, 0, 0);
+//            descTitleParams.setMargins(buttonSize/3*2, buttonSize/2, 0, 0);
             tvDescriptionTitle.setLayoutParams(descTitleParams);
             int tvDescTitleId = View.generateViewId();
             tvDescriptionTitle.setId(tvDescTitleId);
             tvDescriptionTitle.setTextColor(Color.parseColor("#ffffff"));
             tvDescriptionTitle.setTypeface(Typeface.DEFAULT_BOLD);
-            tvDescriptionTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 25);
+            tvDescriptionTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
 
             int descWidth = screenHeight > screenWight ? screenWight - 2*topMargin : screenHeight - 2*topMargin;
             tvDescription = new TextView(context);
             tvDescription.setText(itemDesc);
             RelativeLayout.LayoutParams descParams = new RelativeLayout.LayoutParams(descWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
             descParams.addRule(RelativeLayout.BELOW, tvDescTitleId);
-            descParams.addRule(RelativeLayout.ALIGN_LEFT, imageId);
+            descParams.addRule(RelativeLayout.ALIGN_LEFT, tvDescTitleId);
             tvDescription.setLayoutParams(descParams);
             int tvDescId = View.generateViewId();
             tvDescription.setId(tvDescId);
             tvDescription.setTextColor(Color.parseColor("#ffffff"));
-            tvDescription.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 28);
+            tvDescription.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         }
         return rootView;
     }
@@ -257,6 +361,8 @@ public class CurrentItemFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("id", itemId);
+        outState.putInt("sectionId", sectionId);
+        outState.putString(DbHandler.COL_TYPE, collectionsType);
     }
 
     private class DownloadScaledImage extends AsyncTask<Void, Void, Bitmap>
@@ -295,12 +401,12 @@ public class CurrentItemFragment extends Fragment {
                 Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_NAME, DbHandler.KEY_DESCRIPTION, DbHandler.KEY_IMAGE, DbHandler.KEY_MINI_IMAGE}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
                 try {
                     if (cursorItem.getCount() > 0 && cursorItem.moveToFirst()) {
-                        name = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_NAME));
+                        itemName = name = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_NAME));
                         desc = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_DESCRIPTION));
                         blob = cursorItem.getBlob(cursorItem.getColumnIndex(DbHandler.KEY_IMAGE));
                         if (blob == null) {
 
-                            connection = DbHandler.getConnection(context);
+                            connection = dbHandler.getConnection(context);
 
                             if (connection != null) {
                                 SQL = "SELECT " + DbHandler.KEY_IMAGE + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
@@ -328,7 +434,7 @@ public class CurrentItemFragment extends Fragment {
                     } else {
                         if(DbHandler.isOnline(context)) {
 
-                            connection = DbHandler.getConnection(context);
+                            connection = dbHandler.getConnection(context);
 
                             if (connection != null) {
                                 SQL = "SELECT * FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_ID + " = " + this.itemId;
@@ -339,7 +445,7 @@ public class CurrentItemFragment extends Fragment {
                                     rs.next();
 
                                     int id = rs.getInt(1);
-                                    name = rs.getString(2);
+                                    itemName = name = rs.getString(2);
                                     desc = rs.getString(3);
                                     int secId = rs.getInt(4);
                                     blob = rs.getBytes(5);
@@ -354,7 +460,7 @@ public class CurrentItemFragment extends Fragment {
                                     contentValues.put(DbHandler.KEY_IMAGE, blob);
                                     contentValues.put(DbHandler.KEY_MINI_IMAGE, miniBlob);
                                     contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, dateOfChange);
-                                    contentValues.put(DbHandler.KEY_ITEM_STATUS, "missing");
+                                    contentValues.put(DbHandler.KEY_ITEM_STATUS, DbHandler.STATUS_MISS);
                                     mDb.insert(DbHandler.TABLE_ITEMS, null, contentValues);
 
                                     rs.close();
@@ -421,7 +527,7 @@ public class CurrentItemFragment extends Fragment {
                 imageView.setLayoutParams(imageParams);
                 layout.addView(imageView);
                 layout.addView(buttonTrade);
-                layout.addView(buttonSell);
+                layout.addView(buttonWish);
                 layout.addView(buttonHaveIt);
                 layout.addView(tvDescriptionTitle);
                 layout.addView(tvDescription);

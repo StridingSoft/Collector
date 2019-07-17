@@ -44,7 +44,6 @@ public class RegistrationActivity extends AppCompatActivity {
     private ActionBar actionBar;
     private Context context;
     private DbHandler dbHandler;
-    private SQLiteDatabase mDb;
     private int screenWidth, screenHeight;
     private EditText etLogin, etPassword, etConfirmPassword, etEmail;
     private TextView regStatus;
@@ -60,7 +59,7 @@ public class RegistrationActivity extends AppCompatActivity {
         setContentView(R.layout.content_registration);
 
         context = getBaseContext();
-        dbHandler = MainActivity.dbHandler;
+        dbHandler = DbHandler.getInstance(context);
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
 
@@ -95,11 +94,6 @@ public class RegistrationActivity extends AppCompatActivity {
             dbHandler.updateDataBase();
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
-        }
-        try {
-            mDb = dbHandler.getWritableDatabase();
-        } catch (SQLException mSQLException) {
-            throw mSQLException;
         }
 
         Button regButton = (Button)findViewById(R.id.btnRegisterConfirm);
@@ -249,7 +243,7 @@ public class RegistrationActivity extends AppCompatActivity {
             ResultSet rs2 = null;
             ResultSet rs3= null;
             try {
-                connection = DbHandler.getConnection(context);
+                connection = dbHandler.getConnection(context);
                 if(connection == null) return 1;
 
                 String SQL = "SELECT " + DbHandler.KEY_ID +" FROM " + DbHandler.TABLE_USERS + " WHERE " + DbHandler.KEY_LOGIN + " like '" + login + "'";

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_add_element"
+        android:icon="@drawable/add_element"
+        android:showAsAction="always"
+        android:title="@string/Add"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction" />
     <item
         android:id="@+id/action_clear_user"
         android:orderInCategory="100"
@@ -16,7 +24,8 @@
         android:orderInCategory="100"
         android:title="@string/action_clear_cash"
         app:showAsAction="never" />
-
 </menu>
+
+
 
 

@@ -17,6 +17,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.lobotino.collector.fragments.AddElemFragment;
 import com.lobotino.collector.fragments.ProfileFragment;
 import com.lobotino.collector.utils.DbHandler;
 import com.lobotino.collector.R;
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity
         {
             currentFragment = new CollectionsFragment();
             Bundle bundle = new Bundle();
-            bundle.putString("type", "comCollections");
+            bundle.putString(DbHandler.COL_TYPE, DbHandler.COM_COLLECTIONS);
             bundle.putString("status", "all");
             currentFragment.setArguments(bundle);
             fragmentTransaction.replace(R.id.content_frame, currentFragment);
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity
 
                     switch (fragment.getStatus()) {
                         case SECTION: {
-                            if (fragment.getType().equals("myCollections"))
+                            if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
                                 fragment.printAllSections();
                             else
                                 fragment.printAllSections();
@@ -120,14 +121,14 @@ public class MainActivity extends AppCompatActivity
                             break;
                         }
                         case COLLECTION: {
-                            if (fragment.getType().equals("myCollections"))
+                            if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
                                 fragment.printAllCollections();
                             else
                                 fragment.printAllCollections();
                             break;
                         }
                         case ALL: {
-                            if (fragment.getType().equals("myCollections"))
+                            if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
                                 fragment.printAllCollections();
                             else
                                 fragment.printAllCollections();
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity
                         CollectionsFragment collectionsFragment = new CollectionsFragment();
                         Bundle bundle = new Bundle();
                         bundle.putInt("id", fragment.getSectionId());
-                        bundle.putString("type", fragment.getType());
+                        bundle.putString(DbHandler.COL_TYPE, fragment.getCollectionsType());
                         bundle.putString("status", "section");
                         bundle.putString("sectionTitle", fragment.getArguments().getString("sectionTitle"));
                         bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
@@ -152,6 +153,25 @@ public class MainActivity extends AppCompatActivity
                                 .beginTransaction();
                         fragmentTransaction.replace(R.id.content_frame, collectionsFragment);
                         fragmentTransaction.commit();
+                    }else{
+                        if(currentFragment instanceof AddElemFragment)
+                        {
+                            CollectionsFragment collectionsFragment = new CollectionsFragment();
+                            AddElemFragment fragment = (AddElemFragment) currentFragment;
+                            Bundle bundle = new Bundle();
+                            bundle.putInt("id", fragment.getSectionId());
+                            bundle.putString(DbHandler.COL_TYPE, DbHandler.COM_COLLECTIONS);
+                            bundle.putString("status", "section");
+                            bundle.putString("sectionTitle", fragment.getArguments().getString("sectionTitle"));
+                            bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
+
+                            collectionsFragment.setArguments(bundle);
+                            FragmentManager fragmentManager = getFragmentManager();
+                            FragmentTransaction fragmentTransaction = fragmentManager
+                                    .beginTransaction();
+                            fragmentTransaction.replace(R.id.content_frame, collectionsFragment);
+                            fragmentTransaction.commit();
+                        }
                     }
                 }
                 } else {
@@ -189,13 +209,12 @@ public class MainActivity extends AppCompatActivity
             alert.show();
             return true;
         }
-        if(id == R.id.action_log_items)
-        {
+        if (id == R.id.action_log_items) {
             dbHandler.logAllItems();
+            return true;
         }
-        if(id == R.id.action_clear_user)
-        {
-            if(DbHandler.isOnline(getBaseContext())) {
+        if (id == R.id.action_clear_user) {
+            if (DbHandler.isOnline(getBaseContext())) {
                 dbHandler.changeUser(getBaseContext());
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("User file deleted!")
@@ -208,7 +227,7 @@ public class MainActivity extends AppCompatActivity
                                 });
                 AlertDialog alert = builder.create();
                 alert.show();
-            }else{
+            } else {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("Проверьте подключение с интернетом.")
                         .setCancelable(false)
@@ -221,8 +240,40 @@ public class MainActivity extends AppCompatActivity
                 AlertDialog alert = builder.create();
                 alert.show();
             }
+            return true;
         }
+        if (id == R.id.action_add_element) {
+            if (currentFragment != null) {
+                if (currentFragment instanceof CollectionsFragment) {
+                    CollectionsFragment fragment = (CollectionsFragment) currentFragment;
 
+                    switch (fragment.getStatus()) {
+                        case COLLECTION:{
+                            break;
+                        }
+                        case SECTION:{
+                            AddElemFragment addElemFragment = new AddElemFragment();
+                            Bundle bundle = new Bundle();
+                            bundle.putInt("secId", CollectionsFragment.currentSection);
+                            bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
+                            bundle.putString("sectionTitle", fragment.sectionTitle);
+                            bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
+
+                            addElemFragment.setArguments(bundle);
+
+                            FragmentManager fragmentManager = getFragmentManager();
+                            FragmentTransaction fragmentTransaction = fragmentManager
+                                    .beginTransaction();
+                            fragmentTransaction.replace(R.id.content_frame, addElemFragment);
+                            fragmentTransaction.commit();
+                            break;
+                        }
+
+                    }
+                }
+            }
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -241,7 +292,7 @@ public class MainActivity extends AppCompatActivity
 
                 currentFragment = new CollectionsFragment();
                 Bundle bundle = new Bundle();
-                bundle.putString("type", "myCollections");
+                bundle.putString(DbHandler.COL_TYPE, DbHandler.MY_COLLECTIONS);
                 bundle.putString("status", "all");
                 currentFragment.setArguments(bundle);
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
@@ -255,7 +306,7 @@ public class MainActivity extends AppCompatActivity
 
                 currentFragment = new CollectionsFragment();
                 Bundle bundle = new Bundle();
-                bundle.putString("type", "comCollections");
+                bundle.putString(DbHandler.COL_TYPE, DbHandler.COM_COLLECTIONS);
                 bundle.putString("status", "all");
                 currentFragment.setArguments(bundle);
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);

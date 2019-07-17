@@ -3,6 +3,7 @@ package com.lobotino.collector.async_tasks;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.io.InputStream;
 
 
 
-public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
+public class AsyncGetBitmapsFromUri extends AsyncTask<Void, Void, Bitmap[]>
 {
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
@@ -25,17 +26,12 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
         return inSampleSize;
     }
 
-    private String name, desc, pathToImage, date;
-    private int id, secId, imgSize, imgMiniSize;
+    private Uri pathToImage;
+    private int imgSize, imgMiniSize;
     private Context context;
 
-    public AsyncDownloadImgToServer(String name, String desc, String pathToImage, int id, int secId, String date, int imgSize,int imgMiniSize, Context context) {
-        this.name = name;
-        this.date = date;
-        this.desc = desc;
+    public AsyncGetBitmapsFromUri(Uri pathToImage,int imgSize, int imgMiniSize, Context context) {
         this.pathToImage = pathToImage;
-        this.id = id;
-        this.secId = secId;
         this.imgSize = imgSize;
         this.imgMiniSize = imgMiniSize;
         this.context = context;
@@ -44,7 +40,9 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
     @Override
     protected Bitmap[] doInBackground(Void... voids){
         try {
-            InputStream in = context.getAssets().open(pathToImage);
+            //InputStream in = context.getAssets().open(pathToImage);
+
+            InputStream in = context.getContentResolver().openInputStream(pathToImage);
 
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
@@ -56,14 +54,15 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
             o = new BitmapFactory.Options();
             o.inSampleSize = size;
             o.inPreferredConfig = Bitmap.Config.RGB_565;
-            in.close();
 
-            in = context.getAssets().open(pathToImage);
+            //in = context.getAssets().open(pathToImage);
+            in = context.getContentResolver().openInputStream(pathToImage);
             Bitmap bitmap1 = BitmapFactory.decodeStream(in, null, o);
             in.close();
 
 
-            in = context.getAssets().open(pathToImage);
+//            in = context.getAssets().open(pathToImage);
+            in = context.getContentResolver().openInputStream(pathToImage);
             o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
             BitmapFactory.decodeStream(in, null, o);
@@ -74,9 +73,10 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
             o = new BitmapFactory.Options();
             o.inSampleSize = size;
             o.inPreferredConfig = Bitmap.Config.RGB_565;
-            in.close();
 
-            in = context.getAssets().open(pathToImage);
+
+//            in = context.getAssets().open(pathToImage);
+            in = context.getContentResolver().openInputStream(pathToImage);
             Bitmap bitmap2 = BitmapFactory.decodeStream(in, null, o);
             in.close();
 
@@ -89,16 +89,16 @@ public class AsyncDownloadImgToServer extends AsyncTask<Void, Void, Bitmap[]>
         }
     }
 
-    @Override
-    protected void onPostExecute(Bitmap[] bitmaps) {
-        super.onPostExecute(bitmaps);
-        if(bitmaps.length == 2) {
-            try {
-                AsyncInsertItemIntoServer mdbInsertImage = new AsyncInsertItemIntoServer(id, secId, name, desc, date);
-                mdbInsertImage.execute(bitmaps);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    @Override
+//    protected void onPostExecute(Bitmap[] bitmaps) {
+//        super.onPostExecute(bitmaps);
+//        if(bitmaps.length == 2) {
+//            try {
+//                AsyncInsertItemIntoServer mdbInsertImage = new AsyncInsertItemIntoServer(secId, name, desc, date);
+//                mdbInsertImage.execute(bitmaps);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 }

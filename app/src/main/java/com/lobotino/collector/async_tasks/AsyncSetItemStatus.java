@@ -13,6 +13,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import static com.lobotino.collector.activities.MainActivity.dbHandler;
+
 public class AsyncSetItemStatus extends AsyncTask<String, Void, Void>
 {
     private int itemId;
@@ -21,7 +23,7 @@ public class AsyncSetItemStatus extends AsyncTask<String, Void, Void>
     private SQLiteDatabase mDb;
 
     public AsyncSetItemStatus(int itemId, Context context) {
-        mDb = MainActivity.dbHandler.getDataBase();
+        mDb = dbHandler.getDataBase();
         this.context = context;
         this.itemId = itemId;
     }
@@ -32,7 +34,7 @@ public class AsyncSetItemStatus extends AsyncTask<String, Void, Void>
         contentValues.put(DbHandler.KEY_ITEM_STATUS, strings[0]);
         mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
 
-        connection = DbHandler.getConnection(context);
+        connection = dbHandler.getConnection(context);
 
         if (connection != null) {
             String status = strings[0];
@@ -40,14 +42,28 @@ public class AsyncSetItemStatus extends AsyncTask<String, Void, Void>
             PreparedStatement prSt = null;
             try {
                 switch (status) {
-                    case "in": {
-                        SQL = "insert into " + DbHandler.TABLE_USERS_ITEMS + "(" + DbHandler.KEY_USER_ID + "," + DbHandler.KEY_ITEM_ID +
-                                ") values(" + DbHandler.USER_ID + "," + itemId + ")";
+                    case DbHandler.STATUS_WISH: {
+                        SQL = "insert into " + DbHandler.TABLE_USERS_ITEMS + "(" + DbHandler.KEY_USER_ID + "," + DbHandler.KEY_ITEM_ID + "," + DbHandler.KEY_ITEM_STATUS +
+                                ") values(" + DbHandler.USER_ID + ", " + itemId +  ", '" + DbHandler.STATUS_WISH + "')";
                         prSt = connection.prepareStatement(SQL);
                         prSt.executeUpdate();
                         break;
                     }
-                    case "missing": {
+                    case DbHandler.STATUS_TRADE: {
+                        SQL = "update " + DbHandler.TABLE_USERS_ITEMS + " SET " + DbHandler.KEY_ITEM_STATUS + " = '" + DbHandler.STATUS_TRADE +
+                                "' where " + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID + " and " + DbHandler.KEY_ITEM_ID + " = " + itemId;
+                        prSt = connection.prepareStatement(SQL);
+                        prSt.executeUpdate();
+                        break;
+                    }
+                    case DbHandler.STATUS_IN: {
+                        SQL = "insert into " + DbHandler.TABLE_USERS_ITEMS + "(" + DbHandler.KEY_USER_ID + "," + DbHandler.KEY_ITEM_ID + "," + DbHandler.KEY_ITEM_STATUS +
+                                ") values(" + DbHandler.USER_ID + ", " + itemId + ", '" + DbHandler.STATUS_IN + "')";
+                        prSt = connection.prepareStatement(SQL);
+                        prSt.executeUpdate();
+                        break;
+                    }
+                    case DbHandler.STATUS_MISS: {
                         SQL = "delete from " + DbHandler.TABLE_USERS_ITEMS + " where " + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID + " and " +
                                 DbHandler.KEY_ITEM_ID + " = " + itemId;
                         prSt = connection.prepareStatement(SQL);

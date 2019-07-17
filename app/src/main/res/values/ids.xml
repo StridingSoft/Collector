@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="add_element" type="id">add_element</item>
+    <item name="action_add_element" type="id">action_add_element</item>
+</resources>

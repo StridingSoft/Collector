@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static com.lobotino.collector.activities.MainActivity.dbHandler;
 import static com.lobotino.collector.fragments.CollectionsFragment.fragmentType;
 import static com.lobotino.collector.fragments.CollectionsFragment.fragmentStatus;
 import static com.lobotino.collector.fragments.CollectionsFragment.offers;
@@ -98,7 +99,7 @@ public class AsyncDrawAllCollections extends AsyncTask<Void, Object, Void>
                     cursorCollections.close();
                 } else {
 
-                    Connection connection = DbHandler.getConnection(context);
+                    Connection connection = dbHandler.getConnection(context);
 
 
                     if (connection != null) {

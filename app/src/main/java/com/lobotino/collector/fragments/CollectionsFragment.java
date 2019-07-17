@@ -71,7 +71,7 @@ public class CollectionsFragment extends Fragment {
             pictureSize, screenWidth, externalMargins, topMargin, botMargin, puddingsSize, firstTopMargin, checkImageSize;;
     public static String collectionTitle = "", sectionTitle = "";
     public static List<AsyncCurrentItem> offers;
-    public static String fragmentType = "myCollections";  //myCollections or comCollections
+    public static String fragmentType = DbHandler.MY_COLLECTIONS;  //myCollections or comCollections
     public static String fragmentStatus = "all";
 
 
@@ -100,7 +100,7 @@ public class CollectionsFragment extends Fragment {
         dbHandler = MainActivity.dbHandler;
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         pictureSize = Math.round((float) (screenWidth / 3));
-        checkImageSize = pictureSize*6/7;
+        checkImageSize = pictureSize * 6 / 7;
         layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_1);
         scrollView = (ScrollView) rootView.findViewById(R.id.scroll_view_id_1);
         actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
@@ -109,7 +109,7 @@ public class CollectionsFragment extends Fragment {
         } catch (IOException mIOException) {
             throw new Error("UnableToUpdateDatabase");
         }
-            mDb = dbHandler.getDataBase();
+        mDb = dbHandler.getDataBase();
 
         externalMargins = screenWidth / 11;
         topMargin = screenWidth / 9;
@@ -138,66 +138,62 @@ public class CollectionsFragment extends Fragment {
         buttonBack.setId(View.generateViewId());
         buttonBack.setBackgroundResource(R.drawable.ic_action_name);
 
-        String type, status;
         int id;
-        if(savedInstanceState != null) {
-            type = savedInstanceState.getString("type");
-            status = savedInstanceState.getString("status");
+        if (savedInstanceState != null) {
+            fragmentType = savedInstanceState.getString(DbHandler.COL_TYPE);
+            fragmentStatus = savedInstanceState.getString("status");
             id = savedInstanceState.getInt("id");
             sectionTitle = savedInstanceState.getString("sectionTitle");
             collectionTitle = savedInstanceState.getString("collectionTitle");
-        }else {
-            type = getArguments().getString("type");
-            status = getArguments().getString("status");
+        } else {
+            fragmentType = getArguments().getString(DbHandler.COL_TYPE);
+            fragmentStatus = getArguments().getString("status");
             id = getArguments().getInt("id");
             sectionTitle = getArguments().getString("sectionTitle");
             collectionTitle = getArguments().getString("collectionTitle");
         }
 
         if (!EasyPermissions.hasPermissions(context, galleryPermissions)) {
-                EasyPermissions.requestPermissions(this, "Access for storage",
-                        101, galleryPermissions);
+            EasyPermissions.requestPermissions(this, "Access for storage",
+                    101, galleryPermissions);
+        }
+
+        switch (fragmentStatus) {
+            case "collection": {
+                currentCollection = id;
+                if (fragmentType.equals(DbHandler.MY_COLLECTIONS))
+                    printAllSections();
+                else
+                    printAllSections();
+                break;
             }
-
-            switch (status) {
-                case "collection": {
-                    currentCollection = id;
-                    if (type.equals("myCollections"))
-                        printAllSections();
-                    else
-                        printAllSections();
-                    break;
-                }
-                case "section": {
-                    currentSection = id;
-                    if (type.equals("myCollections"))
-                        printAllItems();
-                    else
-                        printAllItems();
-                    break;
-                }
-                case "item": {
-                    CurrentItemFragment currentItemFragment = new CurrentItemFragment();
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("id", id);
-                    bundle.putString("status", savedInstanceState.getString("status"));
-                    currentItemFragment.setArguments(bundle);
-                    FragmentManager fragmentManager = getFragmentManager();
-                    fragmentManager.beginTransaction().replace(R.id.content_frame, currentItemFragment).commit();
-                    break;
-                }
-                default: {
-                    if (type.equals("myCollections"))
-                        printAllCollections();
-                    else {
-                        printAllCollections();
-                    }
+            case "section": {
+                currentSection = id;
+                if (fragmentType.equals(DbHandler.MY_COLLECTIONS))
+                    printAllItems();
+                else
+                    printAllItems();
+                break;
+            }
+            case "item": {
+                CurrentItemFragment currentItemFragment = new CurrentItemFragment();
+                Bundle bundle = new Bundle();
+                bundle.putInt("id", id);
+                //bundle.putString("status", savedInstanceState.getString("status"));
+                bundle.putString(DbHandler.COL_TYPE, fragmentType);
+                currentItemFragment.setArguments(bundle);
+                FragmentManager fragmentManager = getFragmentManager();
+                fragmentManager.beginTransaction().replace(R.id.content_frame, currentItemFragment).commit();
+                break;
+            }
+            default: {
+                if (fragmentType.equals(DbHandler.MY_COLLECTIONS))
+                    printAllCollections();
+                else {
+                    printAllCollections();
                 }
             }
-            fragmentType = type;
-            fragmentStatus = status;
-
-
+        }
         return rootView;
     }
 
@@ -235,9 +231,9 @@ public class CollectionsFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
+        clearOffers();
         outState.putString("status", fragmentStatus);
-        outState.putString("type", fragmentType);
+        outState.putString(DbHandler.COL_TYPE, fragmentType);
         outState.putString("sectionTitle", sectionTitle);
         outState.putString("collectionTitle", collectionTitle);
         if (fragmentStatus.equals("collection"))

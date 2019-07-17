@@ -62,11 +62,11 @@ public class ExprUnparser {
     //  * Convert an "Any" (scalar) to a string.
     //  */
     // static String anyToString(Any e) {
-    //     switch (e.getType()) {
+    //     switch (e.getCollectionsType()) {
     //         case SCALAR:
     //             return scalarToString(e.getScalar());
     //         default:
-    //             throw new IllegalArgumentException("Unknown type tag: " + e.getType());
+    //             throw new IllegalArgumentException("Unknown type tag: " + e.getCollectionsType());
     //     }
     // }
 

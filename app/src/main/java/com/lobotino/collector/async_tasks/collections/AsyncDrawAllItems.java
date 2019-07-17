@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static com.lobotino.collector.activities.MainActivity.dbHandler;
 import static com.lobotino.collector.fragments.CollectionsFragment.fragmentType;
 import static com.lobotino.collector.fragments.CollectionsFragment.offers;
 import static com.lobotino.collector.fragments.CollectionsFragment.lastLeftId ;
@@ -84,7 +85,7 @@ public class AsyncDrawAllItems extends AsyncTask<Void, Integer, Void>
                         }
                         cursorItems.close();
                     } else {
-                        Connection connection = DbHandler.getConnection(context);
+                        Connection connection = dbHandler.getConnection(context);
 
                         if (connection != null) {
                             SQL = "SELECT " + DbHandler.KEY_ID + " FROM " + DbHandler.TABLE_ITEMS + " WHERE " + DbHandler.KEY_SECTION_ID + " = " + secId;
