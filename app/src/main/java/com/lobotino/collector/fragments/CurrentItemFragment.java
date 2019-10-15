@@ -57,7 +57,6 @@ public class CurrentItemFragment extends Fragment {
     private GradientDrawable gradientDrawable;
     private RelativeLayout layout;
     private ScrollView scrollView;
-    private Button buttonBack;
     private ActionBar actionBar;
     private ImageButton buttonTrade, buttonWish, buttonHaveIt;
     private TextView tvDescriptionTitle, tvDescription;
@@ -83,6 +82,7 @@ public class CurrentItemFragment extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_current_item, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
+        mainActivity.addElemMenu.setVisible(false);
         currentFragment = this;
 
         if(savedInstanceState != null)
@@ -123,18 +123,6 @@ public class CurrentItemFragment extends Fragment {
         //gradientDrawable.setColor(Color.parseColor("#180c28"));
         gradientDrawable.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
 
-        buttonBack = new Button(context);
-        int buttonSize = screenWight /12;
-        RelativeLayout.LayoutParams buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
-        buttonParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        buttonParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        int margin = screenWight /60;
-        buttonParams.setMargins(0, margin, 0, 0);
-        buttonBack.setText("");
-        buttonBack.setBackgroundResource(R.drawable.ic_action_name);
-        buttonBack.setLayoutParams(buttonParams);
-        buttonBack.setId(View.generateViewId());
-
         Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
         if(cursorItems.moveToFirst())
         {
@@ -158,7 +146,7 @@ public class CurrentItemFragment extends Fragment {
             buttonBackground.setCornerRadius(17);
             buttonBackground.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
 
-            buttonSize = screenHeight > screenWight ? screenWight / 10 : screenHeight / 10;
+            int buttonSize = screenHeight > screenWight ? screenWight / 10 : screenHeight / 10;
             int buttonMargin = screenHeight > screenWight ? screenWight / 22 : screenHeight / 22;
 
             Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
@@ -170,6 +158,7 @@ public class CurrentItemFragment extends Fragment {
                     inMyWishes = true;
                 } else if (cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS)).equals(DbHandler.STATUS_TRADE)) {
                     inTrade = true;
+                    inMyCollection = true;
                 }
             }
             cursor.close();
@@ -180,7 +169,7 @@ public class CurrentItemFragment extends Fragment {
             buttonTrade.setBackground(buttonBackground);
             int buttonTradeId = View.generateViewId();
             buttonTrade.setId(buttonTradeId);
-            buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
+            RelativeLayout.LayoutParams buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
             buttonParams.addRule(RelativeLayout.BELOW, imageId);
             buttonParams.addRule(RelativeLayout.CENTER_HORIZONTAL, imageId);
             buttonParams.setMargins(0, buttonMargin, 0, 0);
@@ -248,7 +237,7 @@ public class CurrentItemFragment extends Fragment {
                         Bundle bundle = new Bundle();
                         bundle.putInt("itemId", currentFragment.itemId);
                         bundle.putString("itemName", currentFragment.itemName);
-                        bundle.putString("usersTypeString", UsersListFragment.Users.TRADED_PEOPLE.toString());
+                        bundle.putString("usersTypeString", UsersListFragment.Users.WISHED_PEOPLE.toString());
 
                         usersListFragment.setArguments(bundle);
                         FragmentManager fragmentManager = getFragmentManager();
@@ -267,10 +256,11 @@ public class CurrentItemFragment extends Fragment {
                                 inMyCollection = false;
                                 inMyWishes = true;
                                 buttonHaveIt.setImageResource(R.drawable.i_have_it_button);
+                                buttonTrade.setImageResource(R.drawable.trade_button);
                                 Toast toast = Toast.makeText(context, "Добавлено в список желаемого", Toast.LENGTH_SHORT);
                                 toast.show();
                             } else {
-                                newStatus = "missing";
+                                newStatus = DbHandler.STATUS_MISS;
                                 inMyCollection = false;
                                 inMyWishes = false;
                             }
@@ -333,7 +323,7 @@ public class CurrentItemFragment extends Fragment {
             RelativeLayout.LayoutParams descTitleParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             descTitleParams.addRule(RelativeLayout.BELOW, imageId);
             descTitleParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            descTitleParams.setMargins(buttonSize/3*2, buttonSize + descMargin, 0, 0);
+            descTitleParams.setMargins(buttonSize/2, buttonSize + (DbHandler.isUserLogin() ? descMargin : -descMargin), buttonSize/2, 0);
 //            descTitleParams.setMargins(buttonSize/3*2, buttonSize/2, 0, 0);
             tvDescriptionTitle.setLayoutParams(descTitleParams);
             int tvDescTitleId = View.generateViewId();
@@ -526,9 +516,11 @@ public class CurrentItemFragment extends Fragment {
                 imageParams.setMargins(topMargin, topMargin, topMargin, 0);
                 imageView.setLayoutParams(imageParams);
                 layout.addView(imageView);
-                layout.addView(buttonTrade);
-                layout.addView(buttonWish);
-                layout.addView(buttonHaveIt);
+                if(DbHandler.isUserLogin()) {
+                    layout.addView(buttonTrade);
+                    layout.addView(buttonWish);
+                    layout.addView(buttonHaveIt);
+                }
                 layout.addView(tvDescriptionTitle);
                 layout.addView(tvDescription);
             }

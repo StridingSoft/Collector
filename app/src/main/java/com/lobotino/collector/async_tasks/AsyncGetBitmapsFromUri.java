@@ -94,7 +94,7 @@ public class AsyncGetBitmapsFromUri extends AsyncTask<Void, Void, Bitmap[]>
 //        super.onPostExecute(bitmaps);
 //        if(bitmaps.length == 2) {
 //            try {
-//                AsyncInsertItemIntoServer mdbInsertImage = new AsyncInsertItemIntoServer(secId, name, desc, date);
+//                AsyncAddItemToServer mdbInsertImage = new AsyncAddItemToServer(secId, name, desc, date);
 //                mdbInsertImage.execute(bitmaps);
 //            } catch (Exception e) {
 //                e.printStackTrace();

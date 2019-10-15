@@ -2,12 +2,18 @@ package com.lobotino.collector.fragments;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -21,8 +27,6 @@ import com.lobotino.collector.async_tasks.AsyncDrawAllUsers;
 
 public class UsersListFragment extends Fragment {
 
-    private View rootView;
-
     protected ActionBar actionBar;
 
     public AsyncDrawAllUsers currentAsync;
@@ -31,16 +35,14 @@ public class UsersListFragment extends Fragment {
     private String usersTypeString = "", itemName = "";
     private int itemId;
 
-    private Users usersType;
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        rootView = inflater.inflate(R.layout.fragment_users_list, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_users_list, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
-
+        actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
 
 
         if(savedInstanceState != null)
@@ -53,18 +55,39 @@ public class UsersListFragment extends Fragment {
             itemName = getArguments().getString("itemName");
             itemId = getArguments().getInt("itemId");
         }
-        usersType = usersTypeString.equals(Users.WISHED_PEOPLE.toString()) ? Users.WISHED_PEOPLE : Users.TRADED_PEOPLE;
+
+        Users usersType;
+        if (usersTypeString.equals(Users.WISHED_PEOPLE.toString())){
+            usersType =  Users.WISHED_PEOPLE;
+            actionBar.setTitle(("Желают " + actionBar.getTitle()));
+        }
+        else {
+            usersType = Users.TRADED_PEOPLE;
+            actionBar.setTitle(("Обменяют " + actionBar.getTitle()));
+        }
 
         Context context = getActivity().getBaseContext();
-        RelativeLayout layout = rootView.findViewById(R.id.rlUserList);
-        TextView textViewDesc = rootView.findViewById(R.id.tvUserListDesc);
-        if(usersType.equals(Users.WISHED_PEOPLE))
-            textViewDesc.setText("Коллекционеры, желающие получить '" + itemName + "'");
-        else
-            textViewDesc.setText("Коллекционеры, желающие обменять '" + itemName + "'");
-        textViewDesc.setTextColor(Color.parseColor("#ffffff"));
+        LinearLayout layout = rootView.findViewById(R.id.linear_layout_user_list);
 
-        currentAsync = new AsyncDrawAllUsers(context, layout, usersType, itemId, textViewDesc.getId());
+        float dip = 3;
+        Resources r = getResources();
+        int lineHeight = (int)TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dip,
+                r.getDisplayMetrics()
+        );
+
+
+
+//        if(usersType.equals(Users.WISHED_PEOPLE))
+//            textViewDesc.setText("Коллекционеры, желающие получить '" + itemName + "'");
+//        else
+//            textViewDesc.setText("Коллекционеры, желающие обменять '" + itemName + "'");
+//        textViewDesc.setTextColor(Color.parseColor("#ffffff"));
+
+
+
+        currentAsync = new AsyncDrawAllUsers(context, layout, getFragmentManager(), usersType, itemId, lineHeight);
         currentAsync.execute();
 
         return rootView;

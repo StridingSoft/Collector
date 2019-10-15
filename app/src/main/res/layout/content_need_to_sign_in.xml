@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relative_layout_sign_in"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.lobotino.collector.activities.MainActivity"
+    android:background="@color/colorPrimaryLight"
+    >
+
+    <Button
+        android:id="@+id/button_sign_in"
+        style="@style/AppTheme.ButtonReg"
+        android:layout_width="280dp"
+        android:layout_height="40dp"
+        android:layout_alignStart="@+id/button_registration"
+        android:layout_below="@+id/button_registration"
+        android:layout_marginTop="18dp"
+        android:text="@string/Login"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/button_registration"
+        style="@style/AppTheme.ButtonReg"
+        android:layout_width="280dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="176dp"
+        android:text="@string/Register"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/tv_need_to_sign_in"
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button_sign_in"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="70dp"
+        android:text="@string/tv_need_to_sign_in"
+        android:textAlignment="center"
+        android:textColor="@color/colorWhite"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>

@@ -1,10 +1,10 @@
 package com.lobotino.collector.activities;
 
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
@@ -20,6 +20,7 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.lobotino.collector.fragments.CollectionsFragment;
 import com.lobotino.collector.utils.DbHandler;
 import com.lobotino.collector.utils.JSONHandler;
 import com.lobotino.collector.R;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -103,20 +103,15 @@ public class RegistrationActivity extends AppCompatActivity {
                 registration();
             }
         });
-        Button loginButton = (Button)findViewById(R.id.btnGoToLogin);
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                goToLogin();
-            }
-        });
     }
 
-    private void goToLogin()
-    {
-        Intent intent = new Intent(context, LoginActivity.class);
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(context, MainActivity.class);
         startActivity(intent);
     }
+
 
     private void registration() {
         ContentValues contentValues = new ContentValues();
@@ -197,6 +192,7 @@ public class RegistrationActivity extends AppCompatActivity {
             switch (index) {
                 case 0: {
                     regStatus.setText("Успешно!");
+                    dbHandler.syncUserItems();
                     Intent intent = new Intent(context, MainActivity.class);
                     startActivity(intent);
                     break;

@@ -1,5 +1,7 @@
 package com.lobotino.collector.fragments;
 
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.SQLException;
@@ -50,7 +52,7 @@ public class ProfileFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
 
-        int user_id = getArguments().getInt("user_id");
+        final int user_id = getArguments().getInt("user_id");
 
 
         SQLiteDatabase mDb;
@@ -77,6 +79,57 @@ public class ProfileFragment extends Fragment {
         btnWishes.setWidth(screenWight/2 - margins - secondMargins);
         btnTrade.setWidth(screenWight/2 - margins - secondMargins);
 
+
+        btnAllCollections.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentManager fragmentManager = getFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager
+                        .beginTransaction();
+                CollectionsFragment currentFragment = new CollectionsFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString(DbHandler.COL_TYPE, DbHandler.USER_ALL_COLLECTIONS);
+                bundle.putString("status", "all");
+                bundle.putInt("currentUserId", user_id);
+                currentFragment.setArguments(bundle);
+                fragmentTransaction.replace(R.id.content_frame, currentFragment);
+                fragmentTransaction.commit();
+            }
+        });
+
+        btnWishes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentManager fragmentManager = getFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager
+                        .beginTransaction();
+                CollectionsFragment currentFragment = new CollectionsFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString(DbHandler.COL_TYPE, DbHandler.USER_WISH_COLLECTIONS);
+                bundle.putString("status", "all");
+                bundle.putInt("currentUserId", user_id);
+                currentFragment.setArguments(bundle);
+                fragmentTransaction.replace(R.id.content_frame, currentFragment);
+                fragmentTransaction.commit();
+            }
+        });
+
+        btnTrade.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentManager fragmentManager = getFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager
+                        .beginTransaction();
+                CollectionsFragment currentFragment = new CollectionsFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString(DbHandler.COL_TYPE, DbHandler.USER_TRADE_COLLECTIONS);
+                bundle.putString("status", "all");
+                bundle.putInt("currentUserId", user_id);
+                currentFragment.setArguments(bundle);
+                fragmentTransaction.replace(R.id.content_frame, currentFragment);
+                fragmentTransaction.commit();
+            }
+        });
 
 
 

@@ -64,4 +64,11 @@
     <string name="desc_elem">Описание элемента</string>
     <string name="Ready">Готово</string>
     <string name="name_elem">Название элемента</string>
+    <string name="User_List">Список пользователей</string>
+    <string name="tv_need_to_sign_in">Вам нужно войти в систему чтобы увидеть свои коллекции</string>
+    <string name="add_element">Add element</string>
+    <string name="sections_desc">Описании секции</string>
+    <string name="section_name">Название секции</string>
+    <string name="collection_name">Название коллекции</string>
+    <string name="collection_desc">Описание коллекции</string>
 </resources>

@@ -1,11 +1,23 @@
 package com.lobotino.collector.async_tasks;
 
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.lobotino.collector.R;
+import com.lobotino.collector.fragments.ProfileFragment;
 import com.lobotino.collector.fragments.UsersListFragment;
 import com.lobotino.collector.utils.DbHandler;
 
@@ -21,23 +33,35 @@ import static com.lobotino.collector.activities.MainActivity.dbHandler;
 public class AsyncDrawAllUsers extends AsyncTask<Void, String, Void>{
 
     private Context context;
-    private RelativeLayout layout;
-    private int lastUserId, itemId, textViewId;
+    private LinearLayout layout;
+    private int itemId, whiteColor, lineColor;
     private UsersListFragment.Users usersType;
+    private LinearLayout.LayoutParams textViewParams, lineParams;
+    private FragmentManager fragmentManager;
+    private boolean isEmpty = true;
+    private int lineHeight;
 
-    public AsyncDrawAllUsers(Context context, RelativeLayout layout, UsersListFragment.Users usersType, int itemId, int textViewId) {
+    public AsyncDrawAllUsers(Context context, LinearLayout layout, FragmentManager fragmentManager, UsersListFragment.Users usersType, int itemId, int lineHeight) {
         this.context = context;
         this.layout = layout;
         this.usersType = usersType;
         this.itemId = itemId;
-        this.textViewId = textViewId;
+        this.fragmentManager = fragmentManager;
+        this.lineHeight = lineHeight;
+
+        whiteColor = Color.parseColor("#ffffff");
+        lineColor = Color.parseColor("#003100");
+
+        textViewParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textViewParams.gravity = Gravity.CENTER_HORIZONTAL;
+
+        lineParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, lineHeight);
     }
 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
         layout.removeAllViews();
-
     }
 
     @Override
@@ -68,7 +92,8 @@ public class AsyncDrawAllUsers extends AsyncTask<Void, String, Void>{
                             String userName = rs1.getString(1);
                             rs1.close();
 
-                            publishProgress(userName);
+                            String[] paramsList = new String[]{userId + "", userName};
+                            publishProgress(paramsList);
                         }
                         st1.close();
                     }
@@ -98,18 +123,66 @@ public class AsyncDrawAllUsers extends AsyncTask<Void, String, Void>{
 
     @Override
     protected void onProgressUpdate(String... values) {
-        String userName = values[0];
+        if(isEmpty)
+        {
+            isEmpty = false;
+            TextView tvTitle = new TextView(context);
+            tvTitle.setText("Список пользователей");
+            tvTitle.setTextColor(whiteColor);
+            tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
+            tvTitle.setTypeface(Typeface.DEFAULT_BOLD);
+            tvTitle.setLayoutParams(textViewParams);
+            layout.addView(tvTitle);
+
+            View line = new View(context);
+            line.setBackgroundColor(whiteColor);
+            line.setLayoutParams(lineParams);
+            layout.addView(line);
+        }
+
+
+        final int userId = Integer.parseInt(values[0]);
+        String userName = values[1];
         TextView tvUser = new TextView(context);
         tvUser.setText(userName);
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        params.setMargins();
-        //TO DO Анимация загрузки каждой картинки + красивый лист пользователей на обмен!
-        if(lastUserId != 0)
-            params.addRule(RelativeLayout.BELOW, lastUserId);
-        else
-            params.addRule(RelativeLayout.BELOW, textViewId);
+        tvUser.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 28);
+        tvUser.setTextColor(whiteColor);
+        tvUser.setLayoutParams(textViewParams);
+        tvUser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentTransaction fragmentTransaction = fragmentManager
+                        .beginTransaction();
+
+                Fragment profileFragment = new ProfileFragment();
+                Bundle bundle = new Bundle();
+                bundle.putInt("user_id", userId);
+                profileFragment.setArguments(bundle);
+                fragmentTransaction.replace(R.id.content_frame, profileFragment);
+                fragmentTransaction.commit();
+            }
+        });
         layout.addView(tvUser);
-        lastUserId = tvUser.getId();
+
+        View line = new View(context);
+        line.setBackgroundColor(whiteColor);
+        line.setLayoutParams(lineParams);
+        layout.addView(line);
+    }
+
+    @Override
+    protected void onPostExecute(Void aVoid) {
+        if(isEmpty) {
+            layout.removeAllViews();
+            TextView tvEmpty = new TextView(context);
+            tvEmpty.setText("К сожалению, нет пользователей, соответствующих данному запросу");
+            tvEmpty.setTextColor(whiteColor);
+            tvEmpty.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 23);
+            tvEmpty.setTypeface(Typeface.DEFAULT_BOLD);
+            tvEmpty.setGravity(Gravity.CENTER);
+            textViewParams.setMargins(0,lineHeight * 10,0,0);
+            tvEmpty.setLayoutParams(textViewParams);
+            layout.addView(tvEmpty);
+        }
     }
 }

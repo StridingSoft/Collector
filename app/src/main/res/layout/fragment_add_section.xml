@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etSectionName"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="120dp"
+            android:ems="10"
+            android:hint="@string/section_name"
+            android:inputType="textShortMessage"
+            android:textAlignment="viewStart"
+            tools:ignore="LabelFor" />
+
+        <EditText
+            android:id="@+id/etSectionDesc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/etSectionName"
+            android:layout_alignStart="@+id/etSectionName"
+            android:layout_below="@+id/etSectionName"
+            android:layout_marginTop="12dp"
+            android:ems="10"
+            android:hint="@string/sections_desc"
+            android:inputType="textMultiLine"
+            tools:ignore="LabelFor" />
+
+        <Button
+            android:id="@+id/button_accept"
+            style="@style/AppTheme.ButtonReg"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_below="@+id/etSectionDesc"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="46dp"
+            android:text="@string/Ready"
+            android:textAllCaps="true" />
+
+        <TextView
+            android:id="@+id/tvAddElemStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/etSectionDesc"
+            android:layout_centerHorizontal="true"
+            android:layout_centerInParent="@+id/etSectionDesc"
+            android:layout_marginTop="9dp"
+            android:text=""
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+</ScrollView>

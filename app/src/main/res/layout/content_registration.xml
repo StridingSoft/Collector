@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/colorBackground"
+    android:background="@color/colorPrimaryLight"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.lobotino.collector.activities.RegistrationActivity">
 
@@ -19,8 +19,9 @@
         android:hint="@string/login"
         android:inputType="text"
         android:textAlignment="viewStart"
+        android:layout_marginTop="58dp"
         android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+        android:layout_centerHorizontal="true" />
 
     <EditText
         android:id="@+id/etEmail"
@@ -68,30 +69,16 @@
         />
 
     <Button
-        android:id="@+id/btnGoToLogin"
-        style="@style/AppTheme.ButtonReg"
-        android:layout_width="100dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="6dp"
-        android:text="@string/Login"
-        android:textColor="#FFFFFF"
-        android:textSize="15sp"
-        android:layout_below="@+id/etConfirmPassword"
-        android:layout_alignEnd="@+id/etLogin"
-         />
-
-    <Button
         android:id="@+id/btnRegisterConfirm"
         style="@style/AppTheme.ButtonReg"
         android:layout_width="150dp"
         android:layout_height="40dp"
 
-        android:layout_marginEnd="110dp"
         android:text="@string/Registr"
         android:textColor="#FFFFFF"
         android:textSize="15sp"
-        android:layout_alignTop="@+id/btnGoToLogin"
-        android:layout_alignEnd="@+id/btnGoToLogin"/>
+        android:layout_marginTop="29dp"
+        android:layout_below="@+id/tvRegisterStatus"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

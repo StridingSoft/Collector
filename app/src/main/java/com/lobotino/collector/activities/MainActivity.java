@@ -3,10 +3,7 @@ package com.lobotino.collector.activities;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -17,8 +14,12 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.lobotino.collector.fragments.AddElemFragment;
+import com.lobotino.collector.fragments.AddCollectionFragment;
+import com.lobotino.collector.fragments.AddItemFragment;
+import com.lobotino.collector.fragments.AddSectionFragment;
+import com.lobotino.collector.fragments.NeedToSignInFragment;
 import com.lobotino.collector.fragments.ProfileFragment;
+import com.lobotino.collector.fragments.SettingsFragment;
 import com.lobotino.collector.utils.DbHandler;
 import com.lobotino.collector.R;
 import com.lobotino.collector.fragments.CollectionsFragment;
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity
 
     private Fragment currentFragment;
 
+    public static MenuItem addElemMenu;
+
     public void setCurrentFragment(Fragment fragment){
         currentFragment = fragment;
     }
@@ -55,11 +58,6 @@ public class MainActivity extends AppCompatActivity
             e.printStackTrace();
         }
 
-        if(dbHandler.USER_ID == -1)
-        {
-            Intent intent = new Intent(this, RegistrationActivity.class);
-            startActivity(intent);
-        }
 
         setContentView(R.layout.activity_navigation);
 
@@ -109,10 +107,10 @@ public class MainActivity extends AppCompatActivity
             if (currentFragment != null) {
                 if (currentFragment instanceof CollectionsFragment) {
                     CollectionsFragment fragment = (CollectionsFragment) currentFragment;
-                    fragment.clearOffers();
 
                     switch (fragment.getStatus()) {
                         case SECTION: {
+                            CollectionsFragment.clearOffers();
                             if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
                                 fragment.printAllSections();
                             else
@@ -121,13 +119,7 @@ public class MainActivity extends AppCompatActivity
                             break;
                         }
                         case COLLECTION: {
-                            if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
-                                fragment.printAllCollections();
-                            else
-                                fragment.printAllCollections();
-                            break;
-                        }
-                        case ALL: {
+                            CollectionsFragment.clearOffers();
                             if (fragment.getType().equals(DbHandler.MY_COLLECTIONS))
                                 fragment.printAllCollections();
                             else
@@ -154,10 +146,10 @@ public class MainActivity extends AppCompatActivity
                         fragmentTransaction.replace(R.id.content_frame, collectionsFragment);
                         fragmentTransaction.commit();
                     }else{
-                        if(currentFragment instanceof AddElemFragment)
+                        if(currentFragment instanceof AddItemFragment)
                         {
                             CollectionsFragment collectionsFragment = new CollectionsFragment();
-                            AddElemFragment fragment = (AddElemFragment) currentFragment;
+                            AddItemFragment fragment = (AddItemFragment) currentFragment;
                             Bundle bundle = new Bundle();
                             bundle.putInt("id", fragment.getSectionId());
                             bundle.putString(DbHandler.COL_TYPE, DbHandler.COM_COLLECTIONS);
@@ -174,18 +166,18 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 }
-                } else {
-                super.onBackPressed();
             }
         }
     }
 
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.navigation_settings, menu);
         getMenuInflater().inflate(R.menu.add_element, menu);
+        addElemMenu = menu.findItem(R.id.action_add_element);
+        if(!DbHandler.isUserLogin()) addElemMenu.setVisible(false);
+        super.onCreateOptionsMenu(menu);
         return true;
     }
 
@@ -193,66 +185,43 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
 
-            dbHandler.clearCash();
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("Cleaning complete!")
-                    .setCancelable(false)
-                    .setNegativeButton("ОК",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                    dialog.cancel();
-                                }
-                            });
-            AlertDialog alert = builder.create();
-            alert.show();
-            return true;
-        }
-        if (id == R.id.action_log_items) {
-            dbHandler.logAllItems();
-            return true;
-        }
-        if (id == R.id.action_clear_user) {
-            if (DbHandler.isOnline(getBaseContext())) {
-                dbHandler.changeUser(getBaseContext());
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("User file deleted!")
-                        .setCancelable(false)
-                        .setNegativeButton("ОК",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        dialog.cancel();
-                                    }
-                                });
-                AlertDialog alert = builder.create();
-                alert.show();
-            } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Проверьте подключение с интернетом.")
-                        .setCancelable(false)
-                        .setNegativeButton("ОК",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        dialog.cancel();
-                                    }
-                                });
-                AlertDialog alert = builder.create();
-                alert.show();
-            }
-            return true;
-        }
         if (id == R.id.action_add_element) {
             if (currentFragment != null) {
                 if (currentFragment instanceof CollectionsFragment) {
                     CollectionsFragment fragment = (CollectionsFragment) currentFragment;
 
-                    switch (fragment.getStatus()) {
+                    String status = fragment.getStatus();
+                    switch (status) {
+                        case ALL:{
+                            AddCollectionFragment addCollectionFragment = new AddCollectionFragment();
+
+                            FragmentManager fragmentManager = getFragmentManager();
+                            FragmentTransaction fragmentTransaction = fragmentManager
+                                    .beginTransaction();
+                            fragmentTransaction.replace(R.id.content_frame, addCollectionFragment);
+                            fragmentTransaction.commit();
+                            break;
+                        }
                         case COLLECTION:{
+                            AddSectionFragment addSectionFragment = new AddSectionFragment();
+                            Bundle bundle = new Bundle();
+                            bundle.putInt("collectionId", CollectionsFragment.currentCollection);
+                            bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
+                            bundle.putString("sectionTitle", fragment.sectionTitle);
+                            bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
+
+                            addSectionFragment.setArguments(bundle);
+
+                            FragmentManager fragmentManager = getFragmentManager();
+                            FragmentTransaction fragmentTransaction = fragmentManager
+                                    .beginTransaction();
+                            fragmentTransaction.replace(R.id.content_frame, addSectionFragment);
+                            fragmentTransaction.commit();
                             break;
                         }
                         case SECTION:{
-                            AddElemFragment addElemFragment = new AddElemFragment();
+                            AddItemFragment addElemFragment = new AddItemFragment();
                             Bundle bundle = new Bundle();
                             bundle.putInt("secId", CollectionsFragment.currentSection);
                             bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
@@ -282,28 +251,28 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
 
         int id = item.getItemId();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager
+                .beginTransaction();
 
         switch (id)
         {
             case R.id.nav_my_collections :{
-                FragmentManager fragmentManager = getFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager
-                        .beginTransaction();
-
-                currentFragment = new CollectionsFragment();
-                Bundle bundle = new Bundle();
-                bundle.putString(DbHandler.COL_TYPE, DbHandler.MY_COLLECTIONS);
-                bundle.putString("status", "all");
-                currentFragment.setArguments(bundle);
+                addElemMenu.setVisible(false);
+                if(DbHandler.isUserLogin()) {
+                    currentFragment = new CollectionsFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString(DbHandler.COL_TYPE, DbHandler.MY_COLLECTIONS);
+                    bundle.putString("status", "all");
+                    currentFragment.setArguments(bundle);
+                }else{
+                    currentFragment = new NeedToSignInFragment();
+                }
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
                 fragmentTransaction.commit();
                 break;
             }
             case R.id.nav_community_colletions : {
-                FragmentManager fragmentManager = getFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager
-                        .beginTransaction();
-
                 currentFragment = new CollectionsFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString(DbHandler.COL_TYPE, DbHandler.COM_COLLECTIONS);
@@ -314,14 +283,22 @@ public class MainActivity extends AppCompatActivity
                 break;
             }
             case R.id.nav_my_profile:{
-                FragmentManager fragmentManager = getFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager
-                        .beginTransaction();
-
-                currentFragment = new ProfileFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt("user_id", DbHandler.USER_ID);
-                currentFragment.setArguments(bundle);
+                addElemMenu.setVisible(false);
+                if(DbHandler.isUserLogin()) {
+                    currentFragment = new ProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("user_id", DbHandler.USER_ID);
+                    currentFragment.setArguments(bundle);
+                }else{
+                    currentFragment = new NeedToSignInFragment();
+                }
+                fragmentTransaction.replace(R.id.content_frame, currentFragment);
+                fragmentTransaction.commit();
+                break;
+            }
+            case R.id.nav_settings:{
+                addElemMenu.setVisible(false);
+                currentFragment = new SettingsFragment();
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
                 fragmentTransaction.commit();
                 break;

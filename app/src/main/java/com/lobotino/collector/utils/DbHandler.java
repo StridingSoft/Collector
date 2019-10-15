@@ -15,6 +15,7 @@ import android.util.Log;
 import com.lobotino.collector.R;
 import com.lobotino.collector.activities.LoginActivity;
 import com.lobotino.collector.async_tasks.AsyncClearTable;
+import com.lobotino.collector.async_tasks.AsyncClearUserItems;
 import com.lobotino.collector.async_tasks.AsyncGetBitmapsFromUri;
 
 import java.io.File;
@@ -34,7 +35,7 @@ import java.util.Calendar;
 
 public class DbHandler extends SQLiteOpenHelper{
 
-    public static final int DATABASE_VERSION = 63;
+    public static final int DATABASE_VERSION = 66;
     public static final String DB_NAME = "info.db";
     public static String DB_PATH = "";
 
@@ -54,10 +55,10 @@ public class DbHandler extends SQLiteOpenHelper{
     public static final String KEY_ID = "Id";
     public static final String KEY_USER_ID = "IdUser";
     public static final String KEY_ITEM_ID = "IdItem";
+    public static final String KEY_SECTION_ID = "IdSection";
+    public static final String KEY_COLLECTION_ID = "IdCollection";
     public static final String KEY_NAME = "Name";
     public static final String KEY_DESCRIPTION = "Description";
-    public static final String KEY_SECTION_ID = "SectionId";
-    public static final String KEY_COLLECTION_ID = "CollectionId";
     public static final String KEY_IMAGE = "Image";
     public static final String KEY_MINI_IMAGE = "MiniImage";
     public static final String KEY_ITEM_STATUS = "Status";
@@ -77,6 +78,9 @@ public class DbHandler extends SQLiteOpenHelper{
 
     public static final String MY_COLLECTIONS = "myCollections";
     public static final String COM_COLLECTIONS = "comCollections";
+    public static final String USER_ALL_COLLECTIONS = "userAllCollections";
+    public static final String USER_WISH_COLLECTIONS = "userWishCollections";
+    public static final String USER_TRADE_COLLECTIONS = "userTradeCollections";
 
     public static final String COL_TYPE = "collectionType";
 
@@ -98,6 +102,11 @@ public class DbHandler extends SQLiteOpenHelper{
     {
         if(instance == null) return new DbHandler(context);
         return instance;
+    }
+
+    public static boolean isUserLogin()
+    {
+        return USER_ID != -1;
     }
 
     public DbHandler(Context context) {
@@ -140,7 +149,7 @@ public class DbHandler extends SQLiteOpenHelper{
                 needToReconnect = false;
                 try {
                     connection = DriverManager.getConnection(DbHandler.MSSQL_DB, DbHandler.MSSQL_LOGIN, DbHandler.MSSQL_PASS);
-                    if(!connection.isClosed()) {
+                    if(!connection.isClosed() && USER_ID != 1) {
                         new AsyncSetLastActivityDate().execute();
 
                         if(needToSync) syncUserItems();
@@ -215,6 +224,8 @@ public class DbHandler extends SQLiteOpenHelper{
         if (f.exists()) {
             f.delete();
         }
+
+        new AsyncClearUserItems(this.getWritableDatabase()).execute();
 
         Intent intent = new Intent(context, LoginActivity.class);
         context.startActivity(intent);
@@ -402,6 +413,8 @@ public class DbHandler extends SQLiteOpenHelper{
         }
     }
 
+
+
     private class AsyncSyncUserItems extends AsyncTask<Void, Void, Void>    //Синхронизация предметов (вызывается при смене пользователя)
     {
         private Connection connection;
@@ -427,23 +440,23 @@ public class DbHandler extends SQLiteOpenHelper{
 
                 //Выставить missing ВСЕМ предметам пользователя
                 ContentValues contentValues = new ContentValues();
-                contentValues.put(DbHandler.KEY_ITEM_STATUS, "missing");
-                mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ITEM_STATUS + " = ?", new String[]{"in"});
+                contentValues.put(DbHandler.KEY_ITEM_STATUS, DbHandler.STATUS_MISS);
+                mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ITEM_STATUS + " != ?", new String[]{DbHandler.STATUS_MISS});
 
                 //Из онлайн базы достать все предметы, которые есть у нового пользователя
-                String SQL = "SELECT " + DbHandler.KEY_ITEM_ID + " FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE "
+                String SQL = "SELECT " + DbHandler.KEY_ITEM_ID + ", " + DbHandler.KEY_ITEM_STATUS + " FROM " + DbHandler.TABLE_USERS_ITEMS + " WHERE "
                         + DbHandler.KEY_USER_ID + " = " + DbHandler.USER_ID;
                 st1 = connection.createStatement();
                 rs1 = st1.executeQuery(SQL);
                 while(rs1.next())
                 {
                     int itemId = rs1.getInt(1);
-
+                    String status = rs1.getString(2);
 
                     Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ID}, DbHandler.KEY_ID + " = ?", new String[]{itemId + ""}, null, null, null);
                     if (cursorItems.getCount() > 0 && cursorItems.moveToFirst()) {
                         contentValues = new ContentValues();
-                        contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                        contentValues.put(DbHandler.KEY_ITEM_STATUS, status);
                         mDb.update(DbHandler.TABLE_ITEMS, contentValues, DbHandler.KEY_ID + " = " + itemId, null);
                     }else {
                         SQL = "SELECT " + DbHandler.KEY_ID + ", " + DbHandler.KEY_SECTION_ID  + ", " + DbHandler.KEY_NAME  + ", " + DbHandler.KEY_DESCRIPTION  + ", " +
@@ -467,7 +480,7 @@ public class DbHandler extends SQLiteOpenHelper{
                             contentValues.put(DbHandler.KEY_NAME, name);
                             contentValues.put(DbHandler.KEY_DESCRIPTION, desc);
                             contentValues.put(DbHandler.KEY_MINI_IMAGE, blob);
-                            contentValues.put(DbHandler.KEY_ITEM_STATUS, "in");
+                            contentValues.put(DbHandler.KEY_ITEM_STATUS, status);
                             contentValues.put(DbHandler.KEY_DATE_OF_CHANGE, serverDateStr);
                             mDb.insert(DbHandler.TABLE_ITEMS, null, contentValues);
 

@@ -2,8 +2,6 @@ package com.lobotino.collector.activities;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
@@ -27,7 +25,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.concurrent.ExecutionException;
@@ -83,23 +80,20 @@ public class LoginActivity extends AppCompatActivity{
             throw new Error("UnableToUpdateDatabase");
         }
 
-        Button loginButton = (Button)findViewById(R.id.btnGoToLogin);
+        Button loginButton = (Button)findViewById(R.id.button_registration);
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 login();
             }
         });
-
-        Button regButton = (Button)findViewById(R.id.buttonGoToReg);
-        regButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                goToRegistration();
-            }
-        });
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(context, MainActivity.class);
+        startActivity(intent);
+    }
 
     private void login() {
         String login = etLogin.getText().toString();
@@ -160,11 +154,6 @@ public class LoginActivity extends AppCompatActivity{
         }
     }
 
-    protected void goToRegistration()
-    {
-        Intent intent = new Intent(context, RegistrationActivity.class);
-        startActivity(intent);
-    }
 
 
     class AsyncLoginTask extends AsyncTask<Void, Void, Integer> {
