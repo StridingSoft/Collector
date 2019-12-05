@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.TypedValue;
@@ -50,8 +50,9 @@ public class CollectionsFragment extends Fragment {
 
 
     public static GradientDrawable gradientBackground;
+    public static float dp = 0;
     public static int countImages = 0, currentId = 0, currentCollection = 0, currentSection = 0, tempId, lastLeftId, lastRightId,
-            pictureSize, screenWidth, externalMargins, topMargin, botMargin, puddingsSize, firstTopMargin, checkImageSize;;
+            maxImageSize, screenWidth, externalMargins, topMargin, botMargin, puddingsSize, firstTopMargin, checkImageSize;;
     public static String collectionTitle = "", sectionTitle = "";
     public static List<AsyncCurrentItem> offers;
     public static String fragmentType = DbHandler.MY_COLLECTIONS;  //myCollections or comCollections
@@ -83,18 +84,18 @@ public class CollectionsFragment extends Fragment {
         dbHandler = MainActivity.dbHandler;
         screenWidth = context.getResources().getDisplayMetrics().widthPixels;
 
-        float dp = mainActivity.getResources().getDisplayMetrics().density;
+        dp = mainActivity.getResources().getDisplayMetrics().density;
 
-//        pictureSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 214, getResources().getDisplayMetrics()));
-        externalMargins = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics()));
+//        maxImageSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 214, getResources().getDisplayMetrics()));
+        externalMargins = (int)(8 * dp);
         puddingsSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics()));
-        topMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36, getResources().getDisplayMetrics()));
+        topMargin = (int)(8*dp);
         botMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics()));
-        firstTopMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics()));
+        firstTopMargin = (int) (8 *dp);
 
-        pictureSize = Math.round(dp * 128);
-//        pictureSize = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36, getResources().getDisplayMetrics());
-        checkImageSize = pictureSize * 6 / 7;
+
+        maxImageSize = screenWidth/2 - externalMargins - externalMargins/2;
+        checkImageSize = maxImageSize * 6 / 7;
         relativeLayout = (RelativeLayout) rootView.findViewById(R.id.realtive_layout_1);
         scrollView = (ScrollView) rootView.findViewById(R.id.scroll_view_id_1);
         actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
@@ -108,7 +109,7 @@ public class CollectionsFragment extends Fragment {
 //        externalMargins = screenWidth / 11;
 //        topMargin = screenWidth / 9;
 //        botMargin = screenWidth / 16;
-//        puddingsSize = pictureSize / 30; //15
+//        puddingsSize = maxImageSize / 30; //15
 //        firstTopMargin = screenWidth / 16;
 
         gradientBackground = new GradientDrawable();
@@ -142,6 +143,8 @@ public class CollectionsFragment extends Fragment {
 
         switch (fragmentStatus) {
             case "collection": {
+                FloatingActionButton fab = getActivity().findViewById(R.id.fab);
+                if(fab != null) relativeLayout.removeView(fab);
                 currentCollection = id;
                 if (fragmentType.equals(DbHandler.MY_COLLECTIONS))
                     printAllSections();

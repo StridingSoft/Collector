@@ -8,8 +8,10 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.TypedValue;
@@ -18,7 +20,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.lobotino.collector.R;
@@ -48,7 +49,7 @@ public class ProfileFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        rootView = inflater.inflate(R.layout.fragment_profile, container, false);
+        rootView = inflater.inflate(R.layout.fragment_user_profile, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
 
@@ -134,9 +135,6 @@ public class ProfileFragment extends Fragment {
 
 
         ImageView avatar = rootView.findViewById(R.id.ivAvatar);
-        RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(avatarSize, avatarSize);
-        imageParams.setMargins(margins, margins, 0, 0);
-        avatar.setLayoutParams(imageParams);
 
         userEmail = rootView.findViewById(R.id.tvUserEmail);
         userName = rootView.findViewById(R.id.tvUserName);
@@ -165,6 +163,7 @@ public class ProfileFragment extends Fragment {
             this.userId = userId;
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         protected List<String> doInBackground(Void... voids) {
 

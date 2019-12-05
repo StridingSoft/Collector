@@ -1,6 +1,5 @@
 package com.lobotino.collector.async_tasks.collections;
 
-import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.ContentValues;
 import android.content.Context;
@@ -18,7 +17,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -41,16 +39,17 @@ import static com.lobotino.collector.fragments.CollectionsFragment.clearOffers;
 import static com.lobotino.collector.fragments.CollectionsFragment.collectionTitle;
 import static com.lobotino.collector.fragments.CollectionsFragment.countImages;
 import static com.lobotino.collector.fragments.CollectionsFragment.currentId;
+import static com.lobotino.collector.fragments.CollectionsFragment.dp;
+import static com.lobotino.collector.fragments.CollectionsFragment.firstTopMargin;
 import static com.lobotino.collector.fragments.CollectionsFragment.fragmentType;
 import static com.lobotino.collector.fragments.CollectionsFragment.lastLeftId;
 import static com.lobotino.collector.fragments.CollectionsFragment.lastRightId;
 import static com.lobotino.collector.fragments.CollectionsFragment.sectionTitle;
 import static com.lobotino.collector.fragments.CollectionsFragment.tempId;
-import static com.lobotino.collector.fragments.CollectionsFragment.botMargin;
 import static com.lobotino.collector.fragments.CollectionsFragment.checkImageSize;
 import static com.lobotino.collector.fragments.CollectionsFragment.externalMargins;
-import static com.lobotino.collector.fragments.CollectionsFragment.pictureSize;
-import static com.lobotino.collector.fragments.CollectionsFragment.puddingsSize;
+import static com.lobotino.collector.fragments.CollectionsFragment.maxImageSize;
+import static com.lobotino.collector.fragments.CollectionsFragment.topMargin;
 
 
 public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
@@ -291,7 +290,7 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
                 BitmapFactory.decodeByteArray(blob, 0, blob.length, o);
 
 
-                int size = calculateInSampleSize(o, pictureSize, pictureSize);
+                int size = calculateInSampleSize(o, maxImageSize, maxImageSize);
                 if (size < 1) size = 1;
                 o = new BitmapFactory.Options();
                 o.inSampleSize = size;
@@ -319,15 +318,14 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
         super.onPostExecute(bitmap);
         if (bitmap != null) {
 
-            final ImageView currentImageView = new ImageView(context);
+            final ImageView imageView = new ImageView(context);
+            imageView.setImageBitmap(bitmap);
+//            imageView.setBackground(gradientBackground);
+//            imageView.setLayoutParams(getCardParams(countImages));
+//            imageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
 
-            currentImageView.setImageBitmap(bitmap);
-//            currentImageView.setBackground(gradientBackground);
-//            currentImageView.setLayoutParams(getImageParamsBySide(countImages));
-//            currentImageView.setPadding(puddingsSize, puddingsSize, puddingsSize, puddingsSize);
-
-//            currentImageView.setId(tempId);
-            currentImageView.setOnClickListener(new View.OnClickListener() {
+//            imageView.setId(tempId);
+            imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     clearOffers();
@@ -360,7 +358,7 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
             });
 
             if (status.equals("item") && DbHandler.isUserLogin()) {
-                currentImageView.setOnLongClickListener(new View.OnLongClickListener() {
+                imageView.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View view) {
                         Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
@@ -371,7 +369,7 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
                             AsyncSetItemStatus asyncSetItemStatus = new AsyncSetItemStatus(itemId, context);
                             asyncSetItemStatus.execute(setStatus);
 
-                            setInMyCollection(currentImageView);
+                            setInMyCollection(imageView);
                         }
                         cursor.close();
                         return false;
@@ -383,85 +381,95 @@ public class AsyncCurrentItem extends AsyncTask<String, Void, Bitmap> {
                     if (cursor.moveToFirst()) {
                         String currentStatus = cursor.getString(cursor.getColumnIndex(DbHandler.KEY_ITEM_STATUS));
                         if (currentStatus.equals(DbHandler.STATUS_IN) || currentStatus.equals(DbHandler.STATUS_TRADE))
-                            setInMyCollection(currentImageView);
+                            setInMyCollection(imageView);
                     }
                     cursor.close();
                 }
             }
 
-            if (inMyCollection) setInMyCollection(currentImageView);
+            if (inMyCollection) setInMyCollection(imageView);
 
-            CardView currentCardView = new CardView(context);
 
-            currentCardView.setLayoutParams(getImageParamsBySide(countImages));
-            currentCardView.addView(currentImageView);
-            currentCardView.addView(getTextViewBySide(name, countImages));
 
-            layout.addView(currentCardView, currentId++);
+            CardView cardView = new CardView(context);
+            tempId = View.generateViewId();
+            cardView.setId(tempId);
+            cardView.setLayoutParams(getCardParams(countImages++, bitmap));
+            cardView.addView(imageView);
 
-            tempId = currentCardView.getId();
+            layout.addView(cardView, currentId++);
+//            layout.addView(getNewTextView(name, cardView));
 //            layout.addView(, currentId++);
-            countImages++;
+//            countImages++;
         }
     }
 
-    private TextView getTextViewBySide(String text, int countImages)
+    private CardView getNewTextView(String text, CardView imageCardView)
     {
-        RelativeLayout.LayoutParams textViewParams = new RelativeLayout.LayoutParams(pictureSize, ViewGroup.LayoutParams.WRAP_CONTENT);
         TextView textView = new TextView(context);
-        textView.setTextColor(Color.parseColor("#ffffff"));
+        textView.setTextColor(Color.parseColor("#000000"));
         textView.setText(text);
         textView.setGravity(Gravity.CENTER);
-
-        if (countImages % 2 == 0) {
-            lastLeftId = tempId;
-            textViewParams.addRule(RelativeLayout.BELOW, lastLeftId);
-            textViewParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            textViewParams.setMargins(externalMargins, 5, 0, botMargin);
-        } else {
-            lastRightId = tempId;
-            textViewParams.addRule(RelativeLayout.BELOW, lastRightId);
-            textViewParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            textViewParams.setMargins(0, 5, externalMargins, botMargin);
-        }
-        textView.setLayoutParams(textViewParams);
         textView.setTypeface(Typeface.DEFAULT_BOLD);
-        return textView;
+
+        RelativeLayout.LayoutParams cardViewParams = new RelativeLayout.LayoutParams(maxImageSize, ViewGroup.LayoutParams.WRAP_CONTENT);
+        CardView cardView = new CardView(context);
+        cardView.addView(textView);
+        cardViewParams.addRule(RelativeLayout.BELOW, imageCardView.getId());
+
+//        cardViewParams.addRule(RelativeLayout., imageCardView.getId());
+        cardViewParams.addRule(countImages % 2 != 0 ? RelativeLayout.ALIGN_PARENT_START : RelativeLayout.ALIGN_PARENT_RIGHT);
+        cardViewParams.setMargins(externalMargins, (int)dp * 4, externalMargins, 0);
+        cardView.setBackgroundColor(Color.parseColor("#8EE0E0E0"));
+        cardView.setLayoutParams(cardViewParams);
+
+        return cardView;
     }
 
-    private RelativeLayout.LayoutParams getImageParamsBySide(int countImages)
-    {
-        int firstTopMargin = 24;
-        int topMargin = 20;
+    private int getMaxWidth(Bitmap bitmap){
+        return bitmap.getWidth() > maxImageSize ? maxImageSize : bitmap.getWidth();
+    }
 
-        RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(pictureSize, pictureSize);
+    private int getMaxHeight(Bitmap bitmap){
+        double width = getMaxWidth(bitmap);
+        double k = width/bitmap.getWidth();
+        return (int)(bitmap.getHeight() * k);
+    }
+
+    private RelativeLayout.LayoutParams getCardParams(int countImages, Bitmap bitmap)
+    {
+
+
+        RelativeLayout.LayoutParams cardParams = new RelativeLayout.LayoutParams(getMaxWidth(bitmap), getMaxHeight(bitmap));
         if (countImages % 2 == 0) {
             if (lastLeftId == -1) {
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
-                imageParams.setMargins(externalMargins, firstTopMargin, 0, 0);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                cardParams.setMargins(externalMargins, firstTopMargin, 0, 0);
             } else {
-                imageParams.addRule(RelativeLayout.BELOW, lastLeftId);
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_START);
-                imageParams.setMargins(externalMargins, topMargin, 0, 0);
+                cardParams.addRule(RelativeLayout.BELOW, lastLeftId);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+                cardParams.setMargins(externalMargins, topMargin, 0, 0);
             }
+            lastLeftId = tempId;
         } else {
             if (lastRightId == -1) {
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                imageParams.setMargins(0, firstTopMargin, externalMargins, 0);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                cardParams.setMargins(0, firstTopMargin, externalMargins, 0);
             } else {
-                imageParams.addRule(RelativeLayout.BELOW, lastRightId);
-                imageParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                imageParams.setMargins(0, topMargin, externalMargins, 0);
+                cardParams.addRule(RelativeLayout.BELOW, lastRightId);
+                cardParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                cardParams.setMargins(0, topMargin, externalMargins, 0);
             }
+            lastRightId = tempId;
         }
-        return imageParams;
+        return cardParams;
     }
 
     private void setInMyCollection(ImageView imageView){
         ImageView accept = new ImageView(context);
-        RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(pictureSize/5, pictureSize/5);
+        RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(maxImageSize /5, maxImageSize /5);
         imageParams.addRule(RelativeLayout.ALIGN_LEFT, imageView.getId());
         imageParams.addRule(RelativeLayout.ALIGN_BOTTOM, imageView.getId());
         imageParams.setMargins(checkImageSize, 0, 0, 0);

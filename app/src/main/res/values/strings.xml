@@ -71,4 +71,11 @@
     <string name="section_name">Название секции</string>
     <string name="collection_name">Название коллекции</string>
     <string name="collection_desc">Описание коллекции</string>
+    <string name="user_name">Имя пользователя</string>
+    <string name="user_mail">Почта пользователя</string>
+    <string name="user_last_activity">Последняя активность</string>
+    <string name="user_avatar">user_avatar</string>
+    <string name="btn_i_have">Список всех коллекций</string>
+    <string name="wish">Желаемое</string>
+    <string name="trade_list">Список на обмен</string>
 </resources>
