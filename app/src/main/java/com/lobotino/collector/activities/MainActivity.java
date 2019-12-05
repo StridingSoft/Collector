@@ -1,9 +1,11 @@
 package com.lobotino.collector.activities;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -40,12 +42,13 @@ public class MainActivity extends AppCompatActivity
 
     private Fragment currentFragment;
 
-    public static MenuItem addElemMenu;
+    public static FloatingActionButton fab;
 
     public void setCurrentFragment(Fragment fragment){
         currentFragment = fragment;
     }
 
+    @SuppressLint("RestrictedApi")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +82,67 @@ public class MainActivity extends AppCompatActivity
         FragmentTransaction fragmentTransaction = fragmentManager
                 .beginTransaction();
 
+        fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currentFragment != null) {
+                    if (currentFragment instanceof CollectionsFragment) {
+                        CollectionsFragment fragment = (CollectionsFragment) currentFragment;
+
+                        String status = fragment.getStatus();
+                        switch (status) {
+                            case ALL: {
+                                AddCollectionFragment addCollectionFragment = new AddCollectionFragment();
+
+                                FragmentManager fragmentManager = getFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager
+                                        .beginTransaction();
+                                fragmentTransaction.replace(R.id.content_frame, addCollectionFragment);
+                                fragmentTransaction.commit();
+                                break;
+                            }
+                            case COLLECTION: {
+                                AddSectionFragment addSectionFragment = new AddSectionFragment();
+                                Bundle bundle = new Bundle();
+                                bundle.putInt("collectionId", CollectionsFragment.currentCollection);
+                                bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
+                                bundle.putString("sectionTitle", fragment.sectionTitle);
+                                bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
+
+                                addSectionFragment.setArguments(bundle);
+
+                                FragmentManager fragmentManager = getFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager
+                                        .beginTransaction();
+                                fragmentTransaction.replace(R.id.content_frame, addSectionFragment);
+                                fragmentTransaction.commit();
+                                break;
+                            }
+                            case SECTION: {
+                                AddItemFragment addElemFragment = new AddItemFragment();
+                                Bundle bundle = new Bundle();
+                                bundle.putInt("secId", CollectionsFragment.currentSection);
+                                bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
+                                bundle.putString("sectionTitle", fragment.sectionTitle);
+                                bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
+
+                                addElemFragment.setArguments(bundle);
+
+                                FragmentManager fragmentManager = getFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager
+                                        .beginTransaction();
+                                fragmentTransaction.replace(R.id.content_frame, addElemFragment);
+                                fragmentTransaction.commit();
+                                break;
+                            }
+
+                        }
+                    }
+                }
+            }
+        });
+        if(!DbHandler.isUserLogin()) fab.setVisibility(View.INVISIBLE);
 
         if(savedInstanceState == null || savedInstanceState.getBoolean("isEmpty"))
         {
@@ -174,78 +238,15 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.add_element, menu);
-        addElemMenu = menu.findItem(R.id.action_add_element);
-        if(!DbHandler.isUserLogin()) addElemMenu.setVisible(false);
+//        getMenuInflater().inflate(R.menu.add_element, menu);
+//        fab = menu.findItem(R.id.fab);
+//        if(!DbHandler.isUserLogin()) fab.setVisible(false);
         super.onCreateOptionsMenu(menu);
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
 
-
-        if (id == R.id.action_add_element) {
-            if (currentFragment != null) {
-                if (currentFragment instanceof CollectionsFragment) {
-                    CollectionsFragment fragment = (CollectionsFragment) currentFragment;
-
-                    String status = fragment.getStatus();
-                    switch (status) {
-                        case ALL:{
-                            AddCollectionFragment addCollectionFragment = new AddCollectionFragment();
-
-                            FragmentManager fragmentManager = getFragmentManager();
-                            FragmentTransaction fragmentTransaction = fragmentManager
-                                    .beginTransaction();
-                            fragmentTransaction.replace(R.id.content_frame, addCollectionFragment);
-                            fragmentTransaction.commit();
-                            break;
-                        }
-                        case COLLECTION:{
-                            AddSectionFragment addSectionFragment = new AddSectionFragment();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("collectionId", CollectionsFragment.currentCollection);
-                            bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
-                            bundle.putString("sectionTitle", fragment.sectionTitle);
-                            bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
-
-                            addSectionFragment.setArguments(bundle);
-
-                            FragmentManager fragmentManager = getFragmentManager();
-                            FragmentTransaction fragmentTransaction = fragmentManager
-                                    .beginTransaction();
-                            fragmentTransaction.replace(R.id.content_frame, addSectionFragment);
-                            fragmentTransaction.commit();
-                            break;
-                        }
-                        case SECTION:{
-                            AddItemFragment addElemFragment = new AddItemFragment();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("secId", CollectionsFragment.currentSection);
-                            bundle.putString(DbHandler.COL_TYPE, fragment.getArguments().getString(DbHandler.COL_TYPE));
-                            bundle.putString("sectionTitle", fragment.sectionTitle);
-                            bundle.putString("collectionTitle", fragment.getArguments().getString("collectionTitle"));
-
-                            addElemFragment.setArguments(bundle);
-
-                            FragmentManager fragmentManager = getFragmentManager();
-                            FragmentTransaction fragmentTransaction = fragmentManager
-                                    .beginTransaction();
-                            fragmentTransaction.replace(R.id.content_frame, addElemFragment);
-                            fragmentTransaction.commit();
-                            break;
-                        }
-
-                    }
-                }
-            }
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
+    @SuppressLint("RestrictedApi")
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -258,7 +259,7 @@ public class MainActivity extends AppCompatActivity
         switch (id)
         {
             case R.id.nav_my_collections :{
-                addElemMenu.setVisible(false);
+                fab.setVisibility(View.INVISIBLE);
                 if(DbHandler.isUserLogin()) {
                     currentFragment = new CollectionsFragment();
                     Bundle bundle = new Bundle();
@@ -283,7 +284,7 @@ public class MainActivity extends AppCompatActivity
                 break;
             }
             case R.id.nav_my_profile:{
-                addElemMenu.setVisible(false);
+                fab.setVisibility(View.INVISIBLE);
                 if(DbHandler.isUserLogin()) {
                     currentFragment = new ProfileFragment();
                     Bundle bundle = new Bundle();
@@ -297,7 +298,7 @@ public class MainActivity extends AppCompatActivity
                 break;
             }
             case R.id.nav_settings:{
-                addElemMenu.setVisible(false);
+                fab.setVisibility(View.INVISIBLE);
                 currentFragment = new SettingsFragment();
                 fragmentTransaction.replace(R.id.content_frame, currentFragment);
                 fragmentTransaction.commit();

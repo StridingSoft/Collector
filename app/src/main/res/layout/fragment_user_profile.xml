@@ -1,111 +1,112 @@
-<?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context="com.lobotino.collector.fragments.ProfileFragment">
 
-    <TextView
-        android:id="@+id/tvUserName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/user_name"
-        android:textColor="@color/colorWhite"
-        android:textSize="24sp"
-        app:layout_constraintStart_toEndOf="@+id/cardView2"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- TODO: Update blank fragment layout -->
 
-    <TextView
-        android:id="@+id/tvUserEmail"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/user_mail"
-        android:textColor="@color/colorWhite"
-        android:textSize="18sp"
-        app:layout_constraintStart_toEndOf="@+id/cardView2"
-        app:layout_constraintTop_toBottomOf="@+id/tvUserName" />
-
-    <TextView
-        android:id="@+id/tvUserLastActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/user_last_activity"
-        android:textColor="@color/colorWhite"
-        android:textSize="18sp"
-        app:layout_constraintStart_toEndOf="@+id/cardView2"
-        app:layout_constraintTop_toBottomOf="@+id/tvUserEmail" />
-
-    <android.support.v7.widget.CardView
-        android:id="@+id/cardView2"
-        android:layout_width="128dp"
-        android:layout_height="128dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="UselessParent">
 
         <ImageView
             android:id="@+id/ivAvatar"
             android:layout_width="128dp"
             android:layout_height="128dp"
-            android:contentDescription="@string/user_avatar"
-            app:srcCompat="@drawable/background" />
-    </android.support.v7.widget.CardView>
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            app:srcCompat="@drawable/standart_avatar"
+            tools:ignore="ContentDescription" />
 
-    <Button
-        android:id="@+id/btn_list_i_have"
-        style="@style/AppTheme.ButtonReg"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="16dp"
-        android:text="@string/btn_i_have"
-        android:textAllCaps="false"
-        android:textColor="@color/colorWhite"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardView2" />
+        <TextView
+            android:id="@+id/tvUserEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tvUserName"
+            android:layout_alignStart="@+id/tvUserName"
+            android:layout_marginTop="8dp"
 
-    <Button
-        android:id="@+id/btn_list_i_wish"
-        style="@style/AppTheme.ButtonReg"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/wish"
-        android:textAllCaps="false"
-        android:textColor="@color/colorWhite"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="@+id/cardView2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_list_i_have" />
+            android:text="Pochta@mail.ru"
+            android:textAlignment="textStart"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
 
-    <Button
-        android:id="@+id/btn_trade"
-        style="@style/AppTheme.ButtonReg"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:text="@string/trade_list"
-        android:textAllCaps="false"
-        android:textColor="@color/colorWhite"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn_list_i_wish"
-        app:layout_constraintTop_toBottomOf="@+id/btn_list_i_have" />
-</android.support.constraint.ConstraintLayout>
+        <TextView
+            android:id="@+id/tvUserLastActivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tvUserEmail"
+            android:layout_alignStart="@+id/tvUserEmail"
+            android:layout_marginTop="8dp"
+            android:text="Последняя активность:\n3 дня назад"
+            android:textAlignment="textStart"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/tvUserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/ivAvatar"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@+id/ivAvatar"
+            android:text="User Name"
+            android:textAlignment="textStart"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/btn_list_i_have"
+            style="@style/AppTheme.ButtonReg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ivAvatar"
+            android:layout_alignStart="@+id/ivAvatar"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="16dp"
+            android:text="Список всех коллекций"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/btn_list_i_wish"
+            style="@style/AppTheme.ButtonReg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_list_i_have"
+            android:layout_alignStart="@+id/btn_list_i_have"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Желаемое"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/btn_trade"
+            style="@style/AppTheme.ButtonReg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@+id/btn_list_i_wish"
+            android:layout_alignBottom="@+id/btn_list_i_wish"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="16dp"
+            android:layout_toEndOf="@+id/btn_list_i_wish"
+            android:text="Обмен"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+    </RelativeLayout>
+</FrameLayout>

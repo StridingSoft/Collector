@@ -2,4 +2,5 @@
 <resources>
     <item name="add_element" type="id"/>
     <item name="action_add_element" type="id"/>
+    <item name="enter_name_and_desc_section" type="id" />
 </resources>

@@ -14,6 +14,7 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="test_desc">Родиной арбуза является Южная Африка. Ранее предком культурного арбуза считался колоцинт (Citrullus colocynthis), однако на основе генетических исследований (ДНК из хлоропластов) было выдвинуто предположение, что культурный и дикий арбузы происходят от общего предка — возможно, Citrullus ecirrhosus («дыня тсамма»). Последняя, произрастающая в пустыне Калахари, и поныне является важным источником воды для бушменов.</string>
     <string name="title_activity_sign_in">SignInActivity</string>
     <string name="back">Back</string>
     <string name="register">Register</string>
@@ -78,4 +79,7 @@
     <string name="btn_i_have">Список всех коллекций</string>
     <string name="wish">Желаемое</string>
     <string name="trade_list">Список на обмен</string>
+    <string name="enter_section">Введине название и описание секции</string>
+    <string name="enter_collection">Введине название и описание коллекции</string>
+    <string name="enter_element">Добавьте фотографию, название и описание элемента</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.lobotino.collector.fragments;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
@@ -73,6 +74,7 @@ public class CollectionsFragment extends Fragment {
         return fragmentStatus;
     }
 
+    @SuppressLint("RestrictedApi")
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -133,8 +135,8 @@ public class CollectionsFragment extends Fragment {
             currentUserId = getArguments().getInt("currentUserId");
         }
 
-        if(MainActivity.addElemMenu != null && DbHandler.isUserLogin())
-            MainActivity.addElemMenu.setVisible(fragmentType.equals(DbHandler.COM_COLLECTIONS));
+        if(MainActivity.fab != null && DbHandler.isUserLogin())
+            MainActivity.fab.setVisibility(fragmentType.equals(DbHandler.COM_COLLECTIONS) ? View.VISIBLE : View.INVISIBLE);
 
         if (!EasyPermissions.hasPermissions(context, galleryPermissions)) {
                EasyPermissions.requestPermissions(getActivity(), "Access for storage",

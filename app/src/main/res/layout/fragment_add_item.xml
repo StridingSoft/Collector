@@ -8,24 +8,38 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <TextView
+            android:id="@+id/tv_need_to_sign_in4"
+            android:layout_width="320dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="16dp"
+            android:text="@string/enter_element"
+            android:textAlignment="center"
+            android:textColor="@color/colorWhite"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
         <ImageView
             android:id="@+id/elemImage"
             android:layout_width="230dp"
             android:layout_height="230dp"
-            android:layout_alignParentTop="true"
+            android:layout_below="@+id/tv_need_to_sign_in4"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="27dp"
+            android:layout_marginTop="16dp"
             android:contentDescription=""
-            app:srcCompat="@mipmap/ic_camera"
+            app:srcCompat="@drawable/add_element_photo"
             tools:ignore="ContentDescription" />
 
         <EditText
             android:id="@+id/etElemName"
-            android:layout_width="300dp"
+            android:layout_width="340dp"
             android:layout_height="wrap_content"
             android:layout_below="@+id/elemImage"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="29dp"
+            android:layout_marginTop="16dp"
             android:ems="10"
             android:hint="@string/name_elem"
             android:inputType="textShortMessage"
@@ -33,14 +47,15 @@
 
         <EditText
             android:id="@+id/etElemDesc"
-            android:layout_width="wrap_content"
+            android:layout_width="340dp"
             android:layout_height="wrap_content"
+            android:layout_below="@+id/etElemName"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
             android:ems="10"
             android:hint="@string/desc_elem"
             android:inputType="textMultiLine"
-            tools:ignore="LabelFor"
-            android:layout_below="@+id/etElemName"
-            android:layout_centerHorizontal="true" />
+            tools:ignore="LabelFor" />
 
         <Button
             android:id="@+id/button_accept"
@@ -49,9 +64,10 @@
             android:layout_height="40dp"
             android:layout_below="@+id/etElemDesc"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="46dp"
+            android:layout_marginTop="32dp"
             android:text="@string/Ready"
-            android:textAllCaps="true" />
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF" />
 
         <TextView
             android:id="@+id/tvAddElemStatus"

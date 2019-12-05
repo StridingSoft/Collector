@@ -1,5 +1,6 @@
 package com.lobotino.collector.fragments;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -23,7 +24,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -51,16 +51,12 @@ public class CurrentItemFragment extends Fragment {
 
     private DbHandler dbHandler;
     private SQLiteDatabase mDb;
-    private View rootView;
     private Context context;
-    private int pictureSize, screenWight, screenHeight, puddingsSize, topMargin;
-    private GradientDrawable gradientDrawable;
+    private int pictureSize, screenWight, screenHeight, topMargin;
     private RelativeLayout layout;
-    private ScrollView scrollView;
     private ActionBar actionBar;
     private ImageButton buttonTrade, buttonWish, buttonHaveIt;
     private TextView tvDescriptionTitle, tvDescription;
-    private Connection connection;
     private boolean inMyCollection = false, inMyWishes = false, inTrade = false;
     public int getItemId(){
         return itemId;
@@ -76,13 +72,14 @@ public class CurrentItemFragment extends Fragment {
         return collectionsType;
     }
 
+    @SuppressLint({"RestrictedApi", "ResourceAsColor"})
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        rootView = inflater.inflate(R.layout.fragment_current_item, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_current_item, container, false);
         MainActivity mainActivity = (MainActivity) getActivity();
         mainActivity.setCurrentFragment(this);
-        mainActivity.addElemMenu.setVisible(false);
+        MainActivity.fab.setVisibility(View.INVISIBLE);
         currentFragment = this;
 
         if(savedInstanceState != null)
@@ -102,7 +99,7 @@ public class CurrentItemFragment extends Fragment {
         screenHeight = context.getResources().getDisplayMetrics().heightPixels;
         pictureSize = Math.round((float) (screenHeight /3*2));
         layout = (RelativeLayout) rootView.findViewById(R.id.relative_layout_2);
-        scrollView = (ScrollView) rootView.findViewById(R.id.scroll_view_current_item);
+        ScrollView scrollView = (ScrollView) rootView.findViewById(R.id.scroll_view_current_item);
         actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
         try {
             dbHandler.updateDataBase();
@@ -115,13 +112,13 @@ public class CurrentItemFragment extends Fragment {
             throw mSQLException;
         }
 
-        puddingsSize = pictureSize / 30; //15
-        topMargin = screenWight / 20;
 
-        gradientDrawable = new GradientDrawable();
+
+        GradientDrawable gradientDrawable = new GradientDrawable();
         gradientDrawable.setCornerRadius(15);
-        //gradientDrawable.setColor(Color.parseColor("#180c28"));
-        gradientDrawable.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+//        gradientDrawable.setColor(Color.parseColor("#180c28"));
+//        gradientDrawable.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+//        gradientDrawable.setColors(new int[]{R.color.colorPrimaryDark, R.color.colorPrimary});
 
         Cursor cursorItems = mDb.query(DbHandler.TABLE_ITEMS, null, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
         if(cursorItems.moveToFirst())
@@ -143,11 +140,20 @@ public class CurrentItemFragment extends Fragment {
             downloadScaledImage.execute();
 
             GradientDrawable buttonBackground = new GradientDrawable();
-            buttonBackground.setCornerRadius(17);
-            buttonBackground.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+            buttonBackground.setCornerRadius(10);
+//            buttonBackground.setColors(new int[]{Color.parseColor("#5d000e"), Color.parseColor("#430014")});
+            buttonBackground.setColors(new int[]{Color.parseColor("#212121"), Color.parseColor("#212121")});
+//            buttonBackground.setColors(new int[]{R.color.colorPrimaryLight, R.color.colorPrimary});
 
-            int buttonSize = screenHeight > screenWight ? screenWight / 10 : screenHeight / 10;
-            int buttonMargin = screenHeight > screenWight ? screenWight / 22 : screenHeight / 22;
+
+            double dp = mainActivity.getResources().getDisplayMetrics().density;
+
+//            int buttonSize = screenHeight > screenWight ? screenWight / 10 : screenHeight / 10;
+//            int buttonMargin = screenHeight > screenWight ? screenWight / 22 : screenHeight / 22;
+
+            int buttonSize = (int)Math.round(dp * 40);
+            int buttonMargin = (int)Math.round(dp * 8);
+            topMargin = (int)Math.round(16 * dp);
 
             Cursor cursor = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_ITEM_STATUS}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
 
@@ -172,7 +178,7 @@ public class CurrentItemFragment extends Fragment {
             RelativeLayout.LayoutParams buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
             buttonParams.addRule(RelativeLayout.BELOW, imageId);
             buttonParams.addRule(RelativeLayout.CENTER_HORIZONTAL, imageId);
-            buttonParams.setMargins(0, buttonMargin, 0, 0);
+            buttonParams.setMargins(0, topMargin, 0, 0);
             buttonTrade.setLayoutParams(buttonParams);
             buttonTrade.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -226,7 +232,7 @@ public class CurrentItemFragment extends Fragment {
             buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
             buttonParams.addRule(RelativeLayout.BELOW, imageId);
             buttonParams.addRule(RelativeLayout.ALIGN_START, buttonTradeId);
-            buttonParams.setMargins(buttonMargin + buttonSize, buttonMargin, 0, 0);
+            buttonParams.setMargins(buttonMargin + buttonSize, topMargin, 0, 0);
             buttonWish.setLayoutParams(buttonParams);
             buttonWish.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -283,7 +289,7 @@ public class CurrentItemFragment extends Fragment {
             buttonParams = new RelativeLayout.LayoutParams(buttonSize, buttonSize);
             buttonParams.addRule(RelativeLayout.BELOW, imageId);
             buttonParams.addRule(RelativeLayout.ALIGN_END, buttonTradeId);
-            buttonParams.setMargins(0, buttonMargin, buttonMargin + buttonSize, 0);
+            buttonParams.setMargins(0, topMargin, buttonMargin + buttonSize, 0);
             buttonHaveIt.setLayoutParams(buttonParams);
             buttonHaveIt.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -316,15 +322,19 @@ public class CurrentItemFragment extends Fragment {
                 }
             });
 
-            int descMargin = screenHeight > screenWight ? screenWight /11 : screenHeight /11;
+            int btnHaveItId = View.generateViewId();
+            buttonHaveIt.setId(btnHaveItId);
 
+            int descLeftRightMargins = (int)Math.round(dp * 8);
             tvDescriptionTitle = new TextView(context);
-            tvDescriptionTitle.setText("Описание:");
-            RelativeLayout.LayoutParams descTitleParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            descTitleParams.addRule(RelativeLayout.BELOW, imageId);
+            tvDescriptionTitle.setText("Описание");
+            tvDescriptionTitle.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+
+            RelativeLayout.LayoutParams descTitleParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            descTitleParams.addRule(RelativeLayout.BELOW, DbHandler.isUserLogin() ? btnHaveItId : imageId);
             descTitleParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            descTitleParams.setMargins(buttonSize/2, buttonSize + (DbHandler.isUserLogin() ? descMargin : -descMargin), buttonSize/2, 0);
-//            descTitleParams.setMargins(buttonSize/3*2, buttonSize/2, 0, 0);
+            descTitleParams.setMargins(descLeftRightMargins, topMargin, descLeftRightMargins, 0);
+
             tvDescriptionTitle.setLayoutParams(descTitleParams);
             int tvDescTitleId = View.generateViewId();
             tvDescriptionTitle.setId(tvDescTitleId);
@@ -332,10 +342,9 @@ public class CurrentItemFragment extends Fragment {
             tvDescriptionTitle.setTypeface(Typeface.DEFAULT_BOLD);
             tvDescriptionTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
 
-            int descWidth = screenHeight > screenWight ? screenWight - 2*topMargin : screenHeight - 2*topMargin;
             tvDescription = new TextView(context);
             tvDescription.setText(itemDesc);
-            RelativeLayout.LayoutParams descParams = new RelativeLayout.LayoutParams(descWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            RelativeLayout.LayoutParams descParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             descParams.addRule(RelativeLayout.BELOW, tvDescTitleId);
             descParams.addRule(RelativeLayout.ALIGN_LEFT, tvDescTitleId);
             tvDescription.setLayoutParams(descParams);
@@ -390,6 +399,7 @@ public class CurrentItemFragment extends Fragment {
                 ResultSet rs = null;
                 Cursor cursorItem = mDb.query(DbHandler.TABLE_ITEMS, new String[]{DbHandler.KEY_NAME, DbHandler.KEY_DESCRIPTION, DbHandler.KEY_IMAGE, DbHandler.KEY_MINI_IMAGE}, DbHandler.KEY_ID + " = " + itemId, null, null, null, null);
                 try {
+                    Connection connection;
                     if (cursorItem.getCount() > 0 && cursorItem.moveToFirst()) {
                         itemName = name = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_NAME));
                         desc = cursorItem.getString(cursorItem.getColumnIndex(DbHandler.KEY_DESCRIPTION));
@@ -522,6 +532,8 @@ public class CurrentItemFragment extends Fragment {
                     layout.addView(buttonHaveIt);
                 }
                 layout.addView(tvDescriptionTitle);
+                tvDescription.setText(R.string.test_desc);
+                tvDescription.setTextAlignment(View.TEXT_ALIGNMENT_GRAVITY);
                 layout.addView(tvDescription);
             }
         }
